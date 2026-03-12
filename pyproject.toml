@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "insurance-frequency-severity"
+version = "0.1.0"
+description = "Sarmanov copula joint frequency-severity modelling for UK personal lines insurance"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Burning Cost", email = "pricing.frontier@gmail.com"}
+]
+keywords = [
+    "insurance",
+    "actuarial",
+    "frequency-severity",
+    "copula",
+    "sarmanov",
+    "glm",
+    "pricing",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.23",
+    "pandas>=1.5",
+    "scipy>=1.9",
+    "statsmodels>=0.14",
+    "matplotlib>=3.6",
+]
+
+[project.urls]
+Homepage = "https://github.com/burning-cost/insurance-frequency-severity"
+Repository = "https://github.com/burning-cost/insurance-frequency-severity"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/insurance_frequency_severity"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
