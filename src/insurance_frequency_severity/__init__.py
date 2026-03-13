@@ -1,12 +1,18 @@
 """
-insurance-frequency-severity: Sarmanov copula joint frequency-severity modelling.
+insurance-frequency-severity: Sarmanov copula joint frequency-severity modelling,
+plus neural two-part dependent model.
 
 Challenges the independence assumption in the standard two-model GLM framework.
 Implements Sarmanov copula for mixed discrete-continuous margins, Gaussian copula
 as a comparison, and Garrido's conditional method as the simplest baseline.
 
-Typical usage
--------------
+For the neural two-part dependent model with shared encoder trunk, see the
+``dependent`` subpackage:
+
+>>> from insurance_frequency_severity.dependent import DependentFSModel
+
+Typical usage (Sarmanov)
+------------------------
 >>> from insurance_frequency_severity import JointFreqSev
 >>> model = JointFreqSev(freq_glm=my_nb_glm, sev_glm=my_gamma_glm)
 >>> model.fit(claims_df, n_col="claim_count", s_col="avg_severity")
@@ -28,8 +34,9 @@ from insurance_frequency_severity.diagnostics import (
     compare_copulas,
 )
 from insurance_frequency_severity.report import JointModelReport
+from insurance_frequency_severity import dependent
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "SarmanovCopula",
@@ -41,4 +48,5 @@ __all__ = [
     "CopulaGOF",
     "compare_copulas",
     "JointModelReport",
+    "dependent",
 ]

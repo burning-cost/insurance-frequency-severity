@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "insurance-frequency-severity"
-version = "0.1.0"
-description = "Sarmanov copula joint frequency-severity modelling for UK personal lines insurance"
+version = "0.2.0"
+description = "Sarmanov copula joint frequency-severity modelling for UK personal lines insurance, with neural two-part dependent model"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
@@ -19,6 +19,8 @@ keywords = [
     "sarmanov",
     "glm",
     "pricing",
+    "neural-network",
+    "multi-task-learning",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -30,6 +32,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 requires-python = ">=3.9"
 dependencies = [
@@ -38,6 +41,13 @@ dependencies = [
     "scipy>=1.9",
     "statsmodels>=0.14",
     "matplotlib>=3.6",
+    "torch>=2.0.0",
+    "scikit-learn>=1.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
 ]
 
 [project.urls]
