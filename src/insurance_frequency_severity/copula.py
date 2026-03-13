@@ -177,7 +177,7 @@ class LaplaceKernelGamma(Kernel):
         beta = mu_s / shape
         # M_S(alpha) = (1 / (1 + alpha*beta))^shape — valid only for alpha < 1/beta
         denom = 1.0 + self.alpha * beta
-        if denom <= 0:
+        if np.any(denom <= 0):
             raise ValueError("alpha too large: alpha * beta >= 1, MGF undefined")
         return np.asarray(denom ** (-shape), dtype=float)
 
