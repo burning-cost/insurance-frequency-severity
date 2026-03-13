@@ -120,7 +120,7 @@ class DependentFSDiagnostics:
         cum_exp = np.concatenate([[0.0], cum_exp])
         cum_loss = np.concatenate([[0.0], cum_loss])
 
-        auc = np.trapz(cum_loss, cum_exp)
+        auc = (np.trapezoid if hasattr(np, "trapezoid") else np.trapz)(cum_loss, cum_exp)
         gini = 2.0 * auc - 1.0
         return cum_exp, cum_loss, gini
 
