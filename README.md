@@ -2,6 +2,8 @@
 
 Sarmanov copula joint frequency-severity modelling for UK personal lines insurance.
 
+Merged from: `insurance-frequency-severity` (Sarmanov/Gaussian copula) and `insurance-dependent-fs` (neural two-part model).
+
 Challenges the independence assumption in the standard two-model GLM framework. Your frequency GLM and severity GLM are correct. The problem is multiplying their predictions together as though claim count and average severity are unrelated — they are not.
 
 ## The problem
