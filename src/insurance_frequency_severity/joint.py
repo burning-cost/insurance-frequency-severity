@@ -1010,7 +1010,7 @@ class ConditionalFreqSev:
 
         n_covariate = (n_pos > 0).astype(float) if self.n_as_indicator else n_pos
         X_sev = X_sev.copy()
-        X_sev["_n_covariate"] = n_covariate.values
+        X_sev["_n_covariate"] = np.asarray(n_covariate)
         X_sev_const = sm.add_constant(X_sev, has_constant="add")
 
         # Fit Gamma GLM with log link
