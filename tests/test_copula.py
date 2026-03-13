@@ -296,10 +296,17 @@ class TestGaussianCopulaMixed:
         assert abs(rank_corr) < 0.05, f"Expected near-zero rank corr, got {rank_corr:.4f}"
 
     def test_spearman_rho_approx(self):
-        """spearman_rho() should return a reasonable value."""
+        """spearman_rho() should return a reasonable value.
+
+        For Gaussian copula, spearman_rho = sin(pi * rho / 2).
+        At rho=0.5: sin(pi/4) = sqrt(2)/2 ≈ 0.707.
+        """
         gc = GaussianCopulaMixed(rho=0.5)
         rho_s = gc.spearman_rho()
-        assert 0.4 < rho_s < 0.6, f"Unexpected Spearman rho: {rho_s}"
+        import math
+        expected = math.sin(math.pi * 0.5 / 2)
+        assert abs(rho_s - expected) < 1e-6, f"Unexpected Spearman rho: {rho_s}, expected {expected:.4f}"
+        assert 0.6 < rho_s < 0.8, f"Spearman rho {rho_s:.4f} out of expected range [0.6, 0.8]"
 
 
 # -------------------------------------------------------------------------
@@ -347,14 +354,16 @@ class TestFGMCopula:
         assert np.all((u >= 0) & (u <= 1))
         assert np.all((v >= 0) & (v <= 1))
 
-    def test_sample_rho_sign(self, rng):
+    def test_sample_rho_sign(self):
         """Positive theta => positive rank correlation in samples."""
+        rng_pos = np.random.default_rng(101)
+        rng_neg = np.random.default_rng(202)
         fgm_pos = FGMCopula(theta=1.0)
         fgm_neg = FGMCopula(theta=-1.0)
-        u_p, v_p = fgm_pos.sample(20000, rng=rng)
-        u_n, v_n = fgm_neg.sample(20000, rng=rng)
-        assert np.corrcoef(u_p, v_p)[0, 1] > 0
-        assert np.corrcoef(u_n, v_n)[0, 1] < 0
+        u_p, v_p = fgm_pos.sample(20000, rng=rng_pos)
+        u_n, v_n = fgm_neg.sample(20000, rng=rng_neg)
+        assert np.corrcoef(u_p, v_p)[0, 1] > 0, "Positive theta should give positive correlation"
+        assert np.corrcoef(u_n, v_n)[0, 1] < 0, "Negative theta should give negative correlation"
 
     def test_cdf_at_corners(self):
         """C(0, v) = C(u, 0) = 0; C(1, v) = v; C(u, 1) = u."""

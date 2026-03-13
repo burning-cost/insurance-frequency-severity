@@ -108,7 +108,7 @@ class LaplaceKernelNB(Kernel):
         p = 1.0 / (1.0 + mu * alpha)
         # M_N(theta) = (p / (1 - (1-p)*exp(-theta)))^r
         val = (p / (1.0 - (1.0 - p) * np.exp(-self.theta))) ** r
-        return float(val)
+        return np.asarray(val, dtype=float)
 
     def centred(self, n: np.ndarray, mu: float, alpha: float) -> np.ndarray:
         """phi(n) = exp(-theta*n) - M_N(theta). Zero-mean under NB(mu, alpha)."""
@@ -121,7 +121,7 @@ class LaplaceKernelNB(Kernel):
         - phi(n) -> -M_N(theta) as n -> inf
         So sup = max(phi(0), M_N(theta)) = max(1 - M_N(theta), M_N(theta))
         """
-        m = self.mgf(mu, alpha)
+        m = float(np.asarray(self.mgf(mu, alpha)).flat[0])
         return float(max(1.0 - m, m))
 
 
@@ -143,13 +143,13 @@ class LaplaceKernelPoisson(Kernel):
 
     def mgf(self, mu: float) -> float:
         """Poisson Laplace transform E[exp(-theta*N)]."""
-        return float(np.exp(mu * (np.exp(-self.theta) - 1.0)))
+        return np.asarray(np.exp(mu * (np.exp(-self.theta) - 1.0)), dtype=float)
 
     def centred(self, n: np.ndarray, mu: float) -> np.ndarray:
         return self(n) - self.mgf(mu)
 
     def sup_abs(self, mu: float) -> float:
-        m = self.mgf(mu)
+        m = float(np.asarray(self.mgf(mu)).flat[0])
         return float(max(1.0 - m, m))
 
 
@@ -179,13 +179,13 @@ class LaplaceKernelGamma(Kernel):
         denom = 1.0 + self.alpha * beta
         if denom <= 0:
             raise ValueError("alpha too large: alpha * beta >= 1, MGF undefined")
-        return float(denom ** (-shape))
+        return np.asarray(denom ** (-shape), dtype=float)
 
     def centred(self, s: np.ndarray, mu_s: float, shape: float) -> np.ndarray:
         return self(s) - self.mgf(mu_s, shape)
 
     def sup_abs(self, mu_s: float, shape: float) -> float:
-        m = self.mgf(mu_s, shape)
+        m = float(np.asarray(self.mgf(mu_s, shape)).flat[0])
         # phi(s) ranges from (1 - m) at s=0 down to (-m) as s->inf
         return float(max(1.0 - m, m))
 
