@@ -249,6 +249,11 @@ The benchmark measures pure premium accuracy against the known DGP expected loss
 **When NOT to use:** When frequency and severity are genuinely independent (test with `omega_test()` — if you cannot reject independence, the copula adds noise rather than signal). Also when the book has excess zeros or degenerate severity distributions that the Sarmanov construction does not handle.
 
 
+
+## Databricks Notebook
+
+A ready-to-run Databricks notebook benchmarking this library against standard approaches is available in [burning-cost-examples](https://github.com/burning-cost/burning-cost-examples/blob/main/notebooks/insurance_frequency_severity_demo.py).
+
 ## References
 
 - Vernic, Bolancé, Alemany (2022). Sarmanov distribution for modeling dependence between the frequency and the average severity of insurance claims. *Insurance: Mathematics and Economics*, 102, 111–125.
