@@ -260,3 +260,12 @@ The benchmark measures pure premium accuracy against the known DGP expected loss
 ---
 
 Built by [Burning Cost](https://github.com/burning-cost). MIT licence.
+
+## Related Libraries
+
+| Library | What it does |
+|---------|-------------|
+| [insurance-dispersion](https://github.com/burning-cost/insurance-dispersion) | Double GLM for covariate-driven dispersion — models heterogeneous variance within each component |
+| [insurance-severity](https://github.com/burning-cost/insurance-severity) | Heavy-tail severity with composite Pareto models and ILFs — use for the severity component when tails matter |
+| [insurance-quantile](https://github.com/burning-cost/insurance-quantile) | Quantile GBM for tail risk — non-parametric complement when the full distributional structure is uncertain |
+
