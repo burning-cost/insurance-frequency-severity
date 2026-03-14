@@ -1030,7 +1030,12 @@ class ConditionalFreqSev:
         self.gamma_se_ = float(sev_cond.bse["_n_covariate"])
 
         # Baseline severity (N=0 prediction)
-        self._mu_s_fitted = np.asarray(self.sev_glm_base.fittedvalues, dtype=float)
+        # If freq_X is provided, predict on the full feature matrix so that
+        # premium_correction() returns predictions for all policies (not just claimants).
+        if freq_X is not None:
+            self._mu_s_fitted = np.asarray(self.sev_glm_base.predict(freq_X), dtype=float)
+        else:
+            self._mu_s_fitted = np.asarray(self.sev_glm_base.fittedvalues, dtype=float)
 
         return self
 
