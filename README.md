@@ -35,12 +35,45 @@ pip install insurance-frequency-severity
 ## Quickstart
 
 ```python
+import numpy as np
 import pandas as pd
+import statsmodels.api as sm
 from insurance_frequency_severity import JointFreqSev, DependenceTest
+
+rng = np.random.default_rng(42)
+n_policies = 5000
+# Synthetic motor book: claim count and average severity per policy
+claim_count = rng.poisson(0.10, size=n_policies)
+avg_severity = np.where(
+    claim_count > 0,
+    rng.gamma(shape=3.0, scale=800.0, size=n_policies),
+    np.nan,
+)
+X = np.column_stack([
+    rng.normal(35, 8, n_policies),   # age
+    rng.normal(5, 2, n_policies),    # ncb
+])
+claims_df = pd.DataFrame({
+    "claim_count": claim_count,
+    "avg_severity": avg_severity,
+})
+
+# Fit marginal GLMs
+X_df = pd.DataFrame(X, columns=["age", "ncb"])
+X_const = sm.add_constant(X_df)
+my_nb_glm = sm.GLM(
+    claim_count, X_const, family=sm.families.NegativeBinomial(alpha=0.8)
+).fit()
+claims_mask = claim_count > 0
+my_gamma_glm = sm.GLM(
+    avg_severity[claims_mask],
+    X_const[claims_mask],
+    family=sm.families.Gamma(link=sm.families.links.Log()),
+).fit()
 
 # Test for dependence first
 test = DependenceTest()
-test.fit(n=claims_df["claim_count"], s=claims_df["avg_severity"])
+test.fit(n=claim_count[claims_mask], s=avg_severity[claims_mask])
 print(test.summary())
 
 # Fit joint model — accepts your existing fitted GLMs
@@ -70,8 +103,23 @@ We accept any object with `.predict()` and `.fittedvalues`. The library detects 
 ```python
 # Works with statsmodels GLM results
 import statsmodels.api as sm
-nb_glm = sm.GLM(y, X, family=sm.families.NegativeBinomial(alpha=0.8)).fit()
-gamma_glm = sm.GLM(s, X_claims, family=sm.families.Gamma(link=sm.families.links.Log())).fit()
+import numpy as np
+import pandas as pd
+
+rng = np.random.default_rng(0)
+n = 3000
+X = pd.DataFrame({"age": rng.normal(35, 8, n), "ncb": rng.normal(5, 2, n)})
+X_const = sm.add_constant(X)
+y = rng.poisson(0.10, size=n)
+claims_mask = y > 0
+s = rng.gamma(3.0, 800.0, size=n)
+
+nb_glm = sm.GLM(y, X_const, family=sm.families.NegativeBinomial(alpha=0.8)).fit()
+gamma_glm = sm.GLM(
+    s[claims_mask],
+    X_const[claims_mask],
+    family=sm.families.Gamma(link=sm.families.links.Log()),
+).fit()
 
 model = JointFreqSev(freq_glm=nb_glm, sev_glm=gamma_glm)
 ```
@@ -91,6 +139,8 @@ model.dependence_summary()                    # omega, CI, Spearman rho, AIC/BIC
 ### ConditionalFreqSev (Garrido 2016)
 
 ```python
+from insurance_frequency_severity import ConditionalFreqSev
+
 model = ConditionalFreqSev(freq_glm, sev_glm_base)
 model.fit(data, n_col, s_col)
 model.premium_correction()   # Uses exp(gamma * E[N|x]) correction
@@ -99,7 +149,25 @@ model.premium_correction()   # Uses exp(gamma * E[N|x]) correction
 ### Diagnostics
 
 ```python
-from insurance_frequency_severity import DependenceTest, compare_copulas
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+from insurance_frequency_severity import DependenceTest, compare_copulas, JointFreqSev
+
+rng = np.random.default_rng(0)
+n_policies = 5000
+n = rng.poisson(0.10, size=n_policies)
+s = np.where(n > 0, rng.gamma(3.0, 800.0, size=n_policies), np.nan)
+X = pd.DataFrame({"age": rng.normal(35, 8, n_policies)})
+X_const = sm.add_constant(X)
+freq_glm = sm.GLM(n, X_const, family=sm.families.Poisson()).fit()
+claims_mask = n > 0
+sev_glm = sm.GLM(
+    s[claims_mask], X_const[claims_mask],
+    family=sm.families.Gamma(link=sm.families.links.Log()),
+).fit()
+n_positive = n[claims_mask]
+s_positive = s[claims_mask]
 
 # Test independence
 test = DependenceTest(n_permutations=1000)
@@ -117,7 +185,12 @@ print(comparison)   # Sorted by AIC: sarmanov, gaussian, fgm
 from insurance_frequency_severity import JointModelReport
 
 report = JointModelReport(model, dependence_test=test, copula_comparison=comparison)
-report.to_html("pricing_review.html", n=n_col, s=s_col, correction_df=corrections)
+report.to_html(
+    "pricing_review.html",
+    n=n,
+    s=s,
+    correction_df=corrections,
+)
 ```
 
 ## Premium correction interpretation
