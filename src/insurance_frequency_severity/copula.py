@@ -783,7 +783,7 @@ class GaussianCopulaMixed:
 
     def spearman_rho(self) -> float:
         """Approximate Spearman rho from Gaussian copula parameter."""
-        return float(np.sin(np.pi * self.rho / 2))
+        return float(6.0 / np.pi * np.arcsin(self.rho / 2.0))
 
     def sample(
         self,
@@ -893,23 +893,24 @@ class FGMCopula:
         """
         Sample (U, V) from FGM copula using conditional CDF method.
 
-        C_{V|U}(v|u) = v * [1 + theta*(1-u)*(1-2v)]
-        Solved analytically.
+        C_{V|U}(v|u) = v * [1 + theta*(1-2u)*(1-v)]
+        Solved analytically via quadratic: b*v^2 - (1+b)*v + w = 0,
+        where b = theta*(1-2u).
         """
         if rng is None:
             rng = np.random.default_rng()
         u = rng.uniform(size=size)
         w = rng.uniform(size=size)
         # C_{V|U}(v|u) = w => solve quadratic in v
-        a = self.theta * (1.0 - u)
-        # 2a*v^2 - (1+a)*v + w = 0 when theta != 0
-        # v = [1+a - sqrt((1+a)^2 - 8a*w)] / (4a)
+        # b*v^2 - (1+b)*v + w = 0, where b = theta*(1-2u)
+        # v = [(1+b) - sqrt((1+b)^2 - 4*b*w)] / (2*b)
+        b = self.theta * (1.0 - 2.0 * u)
         with np.errstate(invalid="ignore"):
-            disc = (1.0 + a) ** 2 - 8.0 * a * w
+            disc = (1.0 + b) ** 2 - 4.0 * b * w
             disc = np.maximum(disc, 0.0)
             v = np.where(
-                np.abs(a) < 1e-10,
+                np.abs(b) < 1e-10,
                 w,
-                ((1.0 + a) - np.sqrt(disc)) / (4.0 * a),
+                ((1.0 + b) - np.sqrt(disc)) / (2.0 * b),
             )
         return u, np.clip(v, 0, 1)

@@ -438,7 +438,7 @@ class JointFreqSev:
 
         # AIC/BIC: count omega as the extra parameter
         self.aic_ = -2 * ll_hat + 2 * 1
-        self.bic_ = -2 * ll_hat + np.log(self._n_claims) * 1
+        self.bic_ = -2 * ll_hat + np.log(self._n_obs) * 1
 
         # Spearman rho (MC estimate)
         self.rho_ = copula.spearman_rho(ref_fp, ref_sp, n_mc=10_000)
@@ -528,7 +528,7 @@ class JointFreqSev:
 
         ll_hat = -float(result.fun)
         self.aic_ = -2 * ll_hat + 2 * 1
-        self.bic_ = -2 * ll_hat + np.log(self._n_claims) * 1
+        self.bic_ = -2 * ll_hat + np.log(self._n_obs) * 1
 
         # Simple CI via bootstrap
         if ci_method == "bootstrap" and rng is not None:
@@ -626,7 +626,7 @@ class JointFreqSev:
 
         ll_hat = -float(result.fun)
         self.aic_ = -2 * ll_hat + 2 * 1
-        self.bic_ = -2 * ll_hat + np.log(int(mask.sum())) * 1
+        self.bic_ = -2 * ll_hat + np.log(self._n_obs) * 1
         self.omega_ci_ = (-1.0, 1.0)
 
     def premium_correction(
@@ -785,7 +785,23 @@ class JointFreqSev:
         n_mc: int,
         rng: Optional[np.random.Generator],
     ) -> np.ndarray:
-        """Monte Carlo correction factor for Gaussian/FGM copulas."""
+        """
+        Monte Carlo correction factor for Gaussian/FGM copulas.
+
+        .. note:: Portfolio-average approximation
+            This method computes a single correction factor at the portfolio-mean
+            marginal parameters (mean mu_n, mean mu_s) and stamps it identically
+            across all policies. This is a deliberate approximation: computing a
+            separate n_mc-sample MC simulation per policy would be prohibitively
+            slow for large books, and the copula correction factor is relatively
+            insensitive to moderate variation in mu_n and mu_s when the copula
+            parameter is small.
+
+            For books where mu_n varies by more than an order of magnitude across
+            policies, or where per-policy accuracy is critical, use the Sarmanov
+            copula instead (which has an analytical per-policy correction via
+            _sarmanov_correction).
+        """
         if rng is None:
             rng = np.random.default_rng()
 
@@ -1069,7 +1085,7 @@ class ConditionalFreqSev:
         if exposure is not None:
             mu_n = mu_n * np.asarray(exposure, dtype=float)
 
-        correction = np.exp(self.gamma_ * mu_n)
+        correction = np.exp(self.gamma_ + mu_n * (np.exp(self.gamma_) - 1.0))
         premium_ind = mu_n * mu_s
         premium_joint = premium_ind * correction
 

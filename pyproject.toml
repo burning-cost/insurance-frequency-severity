@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "insurance-frequency-severity"
-version = "0.2.2"
+version = "0.2.3"
 description = "Sarmanov copula joint frequency-severity modelling for UK personal lines insurance, with neural two-part dependent model"
 readme = "README.md"
 license = {text = "MIT"}

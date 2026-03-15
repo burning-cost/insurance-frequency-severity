@@ -296,17 +296,17 @@ class TestGaussianCopulaMixed:
         assert abs(rank_corr) < 0.05, f"Expected near-zero rank corr, got {rank_corr:.4f}"
 
     def test_spearman_rho_approx(self):
-        """spearman_rho() should return a reasonable value.
+        """spearman_rho() should return the correct value (Nelsen 2006).
 
-        For Gaussian copula, spearman_rho = sin(pi * rho / 2).
-        At rho=0.5: sin(pi/4) = sqrt(2)/2 ≈ 0.707.
+        For Gaussian copula, Spearman rho = 6/pi * arcsin(rho/2).
+        At rho=0.5: 6/pi * arcsin(0.25) ≈ 0.4826.
         """
         gc = GaussianCopulaMixed(rho=0.5)
         rho_s = gc.spearman_rho()
         import math
-        expected = math.sin(math.pi * 0.5 / 2)
+        expected = 6.0 / math.pi * math.asin(0.5 / 2.0)
         assert abs(rho_s - expected) < 1e-6, f"Unexpected Spearman rho: {rho_s}, expected {expected:.4f}"
-        assert 0.6 < rho_s < 0.8, f"Spearman rho {rho_s:.4f} out of expected range [0.6, 0.8]"
+        assert 0.4 < rho_s < 0.6, f"Spearman rho {rho_s:.4f} out of expected range [0.4, 0.6]"
 
 
 # -------------------------------------------------------------------------
@@ -354,14 +354,8 @@ class TestFGMCopula:
         assert np.all((u >= 0) & (u <= 1))
         assert np.all((v >= 0) & (v <= 1))
 
-    @pytest.mark.xfail(
-        reason="FGM sampler uses theta*(1-u) but correct formula uses theta*(1-2u); "
-               "positive-theta sampling works but negative-theta samples may not show "
-               "negative correlation. Tracked for future fix.",
-        strict=False,
-    )
     def test_sample_rho_sign(self):
-        """Positive theta => positive rank correlation in samples."""
+        """Positive theta => positive rank correlation; negative theta => negative correlation."""
         rng_pos = np.random.default_rng(1001)
         rng_neg = np.random.default_rng(2002)
         fgm_pos = FGMCopula(theta=1.0)
@@ -382,3 +376,91 @@ class TestFGMCopula:
         assert fgm.cdf(np.array([0.5]), np.array([0.0]))[0] == pytest.approx(0.0)
         assert fgm.cdf(np.array([1.0]), np.array([0.5]))[0] == pytest.approx(0.5, abs=1e-10)
         assert fgm.cdf(np.array([0.5]), np.array([1.0]))[0] == pytest.approx(0.5, abs=1e-10)
+
+
+# -------------------------------------------------------------------------
+# Regression tests for P0 bugs
+# -------------------------------------------------------------------------
+
+class TestRegressionP0:
+    """Regression tests for P0 bugs fixed in the code review."""
+
+    def test_p0_2_fgm_sampler_spearman_rho_sign(self):
+        """
+        P0-2 regression: FGM sampler must produce samples with the correct
+        Spearman rank correlation sign.
+
+        Old bug: the conditional CDF used b = theta*(1-u) instead of
+        b = theta*(1-2u), causing the quadratic root formula to be wrong.
+        The result was that samples from theta<0 had positive (not negative)
+        rank correlation.
+        """
+        rng_pos = np.random.default_rng(42)
+        rng_neg = np.random.default_rng(99)
+
+        fgm_pos = FGMCopula(theta=1.0)
+        fgm_neg = FGMCopula(theta=-1.0)
+
+        u_p, v_p = fgm_pos.sample(100_000, rng=rng_pos)
+        u_n, v_n = fgm_neg.sample(100_000, rng=rng_neg)
+
+        from scipy import stats as sp_stats
+        rho_pos, _ = sp_stats.spearmanr(u_p, v_p)
+        rho_neg, _ = sp_stats.spearmanr(u_n, v_n)
+
+        # theta=1 => Spearman rho = 1/3 ≈ 0.333; theta=-1 => -1/3 ≈ -0.333
+        assert rho_pos > 0.25, (
+            f"P0-2 regression: theta=1 should give Spearman rho≈0.333, got {rho_pos:.4f}"
+        )
+        assert rho_neg < -0.25, (
+            f"P0-2 regression: theta=-1 should give Spearman rho≈-0.333, got {rho_neg:.4f}"
+        )
+
+    def test_p0_2_fgm_sampler_spearman_rho_magnitude(self):
+        """P0-2: sampled Spearman rho should approximate theta/3 (FGM exact result)."""
+        rng = np.random.default_rng(7)
+        theta = 0.6
+        fgm = FGMCopula(theta=theta)
+        u, v = fgm.sample(200_000, rng=rng)
+        from scipy import stats as sp_stats
+        rho_s, _ = sp_stats.spearmanr(u, v)
+        expected = theta / 3.0
+        assert abs(rho_s - expected) < 0.015, (
+            f"P0-2 regression: sampled Spearman rho {rho_s:.4f} "
+            f"should be within 0.015 of theta/3={expected:.4f}"
+        )
+
+    def test_p0_3_gaussian_copula_spearman_rho_formula(self):
+        """
+        P0-3 regression: GaussianCopulaMixed.spearman_rho() must use the
+        correct Nelsen (2006) formula: 6/pi * arcsin(rho/2).
+
+        Old bug: the code used sin(pi*rho/2), which is the inverse mapping.
+        At rho=0.5, the old formula gives ≈0.707; the correct value is ≈0.483.
+        """
+        import math
+
+        test_cases = [
+            (0.5,  6.0 / math.pi * math.asin(0.25)),
+            (0.0,  0.0),
+            (-0.5, 6.0 / math.pi * math.asin(-0.25)),
+            (0.9,  6.0 / math.pi * math.asin(0.45)),
+        ]
+        for rho, expected in test_cases:
+            gc = GaussianCopulaMixed(rho=rho)
+            got = gc.spearman_rho()
+            assert abs(got - expected) < 1e-9, (
+                f"P0-3 regression: rho={rho}, expected Spearman={expected:.6f}, got {got:.6f}"
+            )
+
+    def test_p0_3_spearman_rho_sign_consistency(self):
+        """P0-3: Spearman rho must have the same sign as the Pearson rho parameter."""
+        for rho in [-0.8, -0.3, 0.0, 0.3, 0.8]:
+            gc = GaussianCopulaMixed(rho=rho)
+            rho_s = gc.spearman_rho()
+            if rho > 0:
+                assert rho_s > 0, f"Positive rho={rho} should give positive Spearman rho, got {rho_s}"
+            elif rho < 0:
+                assert rho_s < 0, f"Negative rho={rho} should give negative Spearman rho, got {rho_s}"
+            else:
+                assert rho_s == 0.0

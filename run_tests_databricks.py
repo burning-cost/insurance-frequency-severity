@@ -48,7 +48,7 @@ src = "/Workspace/insurance-frequency-severity"
 dst = "/tmp/insurance-frequency-severity"
 if os.path.exists(dst):
     shutil.rmtree(dst)
-shutil.copytree(src, dst)
+shutil.copytree(src, dst, ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".git"))
 print(f"Copied to {dst}")
 
 # Install the package from /tmp
