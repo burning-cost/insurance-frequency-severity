@@ -1,0 +1,46 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "docs/**"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install insurance-frequency-severity and pdoc
+        run: |
+          pip install -e . pdoc
+
+      - name: Generate API docs
+        run: |
+          pdoc \
+            --output-directory docs/api \
+            --docformat google \
+            --footer-text "insurance-frequency-severity v$(python -c 'import insurance_frequency_severity; print(insurance_frequency_severity.__version__)')" \
+            --edit-url "insurance_frequency_severity=https://github.com/burning-cost/insurance-frequency-severity/blob/main/src/insurance_frequency_severity/" \
+            insurance_frequency_severity \
+            insurance_frequency_severity.dependent
+
+      - name: Commit updated docs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/
+          git diff --cached --quiet || git commit -m "docs: regenerate API reference [skip ci]"
+          git push
