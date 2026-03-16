@@ -105,7 +105,7 @@ print(corrections[["mu_n", "mu_s", "correction_factor", "premium_joint"]].descri
 
 ## GLM compatibility
 
-We accept any object with `.predict()` and `.fittedvalues`. The library detects the marginal family from `model.family` (statsmodels convention). For non-statsmodels GLMs, pass your own parameter dictionaries directly.
+This library is designed for statsmodels GLM objects. It detects marginal families via `model.family` (statsmodels convention) and extracts dispersion from `model.scale`. Non-statsmodels objects with `.predict()` and `.fittedvalues` may work, but kernel parameters will be inferred from statsmodels-specific attributes and could silently produce wrong results. For non-statsmodels GLMs, pass parameter dictionaries directly.
 
 ```python
 # Works with statsmodels GLM results
@@ -141,6 +141,10 @@ model.fit(data, n_col, s_col, method="ifm")   # IFM or MLE
 model.premium_correction()                    # DataFrame with correction factors
 model.loss_cost(X_new)                        # Corrected pure premium for new data
 model.dependence_summary()                    # omega, CI, Spearman rho, AIC/BIC
+
+# Note: for copula="gaussian" or "fgm", premium_correction() returns a single
+# portfolio-average correction factor applied to all policies. Per-policy
+# analytical corrections are available with copula="sarmanov" only.
 ```
 
 ### ConditionalFreqSev (Garrido 2016)
@@ -150,7 +154,7 @@ from insurance_frequency_severity import ConditionalFreqSev
 
 model = ConditionalFreqSev(freq_glm, sev_glm_base)
 model.fit(data, n_col, s_col)
-model.premium_correction()   # Uses exp(gamma * E[N|x]) correction
+model.premium_correction()   # Correction = exp(gamma) * exp(mu_n * (exp(gamma) - 1))
 ```
 
 ### Diagnostics
@@ -220,7 +224,7 @@ f(n, s) = f_N(n) × f_S(s) × [1 + ω × φ₁(n) × φ₂(s)]
 
 where φ₁, φ₂ are bounded kernel functions with zero mean under their respective marginals. When ω=0 this reduces to the product of marginals (independence). The key advantage over standard copulas: no probability integral transform is needed for the discrete frequency margin. Sklar's theorem is not unique for discrete distributions, so the "copula" of a discrete-continuous pair is not well-defined. The Sarmanov family sidesteps this entirely by working directly with the joint distribution.
 
-Spearman's rho range for Sarmanov: [-3/4, 3/4] (Blier-Wong 2026). This comfortably accommodates the moderate negative dependence found in auto insurance data.
+Spearman's rho range for the Laplace kernel Sarmanov with NB/Gamma margins: [-3/4, 3/4] (Blier-Wong 2026). This comfortably accommodates the moderate negative dependence found in auto insurance data.
 
 The IFM (Inference Functions for Margins) estimator:
 1. Fit frequency GLM → get E[N|xᵢ] for each policy
@@ -252,11 +256,11 @@ Benchmarked against an **independent two-part model** (Poisson GLM × Gamma GLM,
 
 **Note on omega sign:** The benchmark DGP uses a positive latent risk score (z) to drive both higher frequency and severity. The fitted omega is -1.14 (Spearman rho ≈ -0.015), meaning the library detected negative-leaning dependence on this sample. The 95% CI on omega is (-1.61, +0.30), which includes zero — independence is not rejected at 5%. Despite this, the correction produces a 28.6% MAE improvement and reduces portfolio bias from +22.95% to -6.77%. This is explained by the correction absorbing some of the marginal model error: the GLMs slightly overpredict frequency for high-latent-risk policies, and the copula correction partially offsets this.
 
-The canonical use case is a portfolio where omega is positive and statistically significant. Use `omega_test()` before fitting to check whether the correction is supported by the data.
+The canonical use case is a portfolio where omega is positive and statistically significant. Use `DependenceTest` before fitting to check whether the correction is supported by the data.
 
-**When to use:** Personal lines motor or property books where `omega_test()` indicates positive and statistically significant freq-sev dependence. The correction is analytical (closed-form, no simulation at scoring time).
+**When to use:** Personal lines motor or property books where `DependenceTest` indicates positive and statistically significant freq-sev dependence. The correction is analytical (closed-form, no simulation at scoring time).
 
-**When NOT to use:** When you cannot reject independence (`omega_test()` p-value > 0.05). Also when the book has very few claims (< 500) — the omega estimate will be too noisy.
+**When NOT to use:** When you cannot reject independence (`DependenceTest` p-value > 0.05). Also when the book has very few claims (< 500) — the omega estimate will be too noisy.
 
 
 

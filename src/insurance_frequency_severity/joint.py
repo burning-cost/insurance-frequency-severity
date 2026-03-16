@@ -934,7 +934,7 @@ class ConditionalFreqSev:
     The pure premium becomes:
         E[N * S | x] = E[N|x] * E[S|x, N=1] * exp(gamma * E[N|x])
 
-    The correction factor is exp(gamma * E[N|x]).
+    The correction factor is exp(gamma) * exp(mu_n * (exp(gamma) - 1)).
 
     This is simpler and more robust than copula estimation. It uses only
     standard GLM infrastructure. The tradeoff is that it restricts the
@@ -1063,10 +1063,11 @@ class ConditionalFreqSev:
         """
         Compute premium correction factors using the Garrido formula.
 
-        Correction = exp(gamma * E[N|x])
+        Correction = exp(gamma) * exp(mu_n * (exp(gamma) - 1))
 
-        For a log-link severity model, this is the exact correction when
-        N is the covariate. For general link functions, it is an approximation.
+        For a log-link severity model with Poisson frequency, this is the
+        exact closed-form correction. For general link functions or non-Poisson
+        frequency, it is an approximation. For general link functions, it is an approximation.
 
         Returns
         -------
