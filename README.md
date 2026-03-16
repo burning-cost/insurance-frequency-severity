@@ -238,21 +238,24 @@ For small books, use `ConditionalFreqSev` — it estimates a single parameter γ
 
 ## Performance
 
-Benchmarked against **independent two-part model** (Poisson GLM × Gamma GLM, pure premium = E[N] × E[S]) on 15,000 synthetic UK motor policies with known positive freq-sev dependence (a latent risk score drives both). Full notebook: `notebooks/benchmark.py`.
+Benchmarked against an **independent two-part model** (Poisson GLM × Gamma GLM, pure premium = E[N] × E[S]) on 12,000 synthetic UK motor policies (8,437 train / 3,563 test) with known positive freq-sev dependence via a latent risk score. Results from `benchmarks/benchmark_insurance_frequency_severity.py` run 2026-03-16.
 
-| Metric | Independent model | Sarmanov copula (insurance-frequency-severity) |
-|--------|------------------|----------------------------------------------|
-| Pure premium MAE vs DGP | higher (systematic understatement) | lower |
-| Portfolio A/E ratio | below 1.0 (underpriced) | near 1.0 |
-| Top-decile bias | highest (concentrates at high-risk) | reduced |
-| Sarmanov omega log-likelihood | — | higher than independence model |
-| Analytical at scoring time | yes | yes (closed-form correction) |
+| Metric | Independent model | Sarmanov copula | Change |
+|--------|------------------|-----------------|--------|
+| Pure premium MAE vs oracle | 14.8405 | **10.6010** | -28.6% |
+| Portfolio total premium bias | +22.95% | -6.77% | -16.2pp |
+| Estimated Spearman rho | 0.000 | -0.015 | — |
+| Fit time (seconds) | 0.105 | 0.128 | +21% |
 
-The benchmark measures pure premium accuracy against the known DGP expected loss cost. The independence assumption systematically understates pure premium because Cov(N, S|x) > 0: the same risks that claim more often also claim for higher amounts. The Sarmanov correction is analytical (no simulation at scoring time) and concentrates its improvement in the high-risk tail where under-pricing is most commercially damaging.
+**Correction factors:** mean 0.943, p10 0.939, p90 0.950. High-risk decile correction: 0.952 (-4.8% premium reduction vs independence). Low-risk decile: 0.940.
 
-**When to use:** Personal lines motor or property books where there is detectable positive correlation between claim count and severity (test with the `omega_test()` function before fitting). The 3–8% portfolio-level correction and 10–15% top-decile correction are commercially significant on high-volume books.
+**Note on omega sign:** The benchmark DGP uses a positive latent risk score (z) to drive both higher frequency and severity. The fitted omega is -1.14 (Spearman rho ≈ -0.015), meaning the library detected negative-leaning dependence on this sample. The 95% CI on omega is (-1.61, +0.30), which includes zero — independence is not rejected at 5%. Despite this, the correction produces a 28.6% MAE improvement and reduces portfolio bias from +22.95% to -6.77%. This is explained by the correction absorbing some of the marginal model error: the GLMs slightly overpredict frequency for high-latent-risk policies, and the copula correction partially offsets this.
 
-**When NOT to use:** When frequency and severity are genuinely independent (test with `omega_test()` — if you cannot reject independence, the copula adds noise rather than signal). Also when the book has excess zeros or degenerate severity distributions that the Sarmanov construction does not handle.
+The canonical use case is a portfolio where omega is positive and statistically significant. Use `omega_test()` before fitting to check whether the correction is supported by the data.
+
+**When to use:** Personal lines motor or property books where `omega_test()` indicates positive and statistically significant freq-sev dependence. The correction is analytical (closed-form, no simulation at scoring time).
+
+**When NOT to use:** When you cannot reject independence (`omega_test()` p-value > 0.05). Also when the book has very few claims (< 500) — the omega estimate will be too noisy.
 
 
 
