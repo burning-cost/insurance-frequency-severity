@@ -3,7 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/v/insurance-frequency-severity)](https://pypi.org/project/insurance-frequency-severity/)
 [![Python](https://img.shields.io/pypi/pyversions/insurance-frequency-severity)](https://pypi.org/project/insurance-frequency-severity/)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen)]()
-[![License](https://img.shields.io/badge/license-BSD--3-blue)]()
+[![License](https://img.shields.io/badge/license-MIT-green)]()
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/burning-cost/insurance-frequency-severity/blob/main/notebooks/quickstart.ipynb)
 
 
