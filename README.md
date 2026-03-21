@@ -11,6 +11,8 @@ Sarmanov copula joint frequency-severity modelling for UK personal lines insuran
 
 Merged from: `insurance-frequency-severity` (Sarmanov/Gaussian copula) and `insurance-dependent-fs` (neural two-part model).
 
+**Blog post:** [Your Frequency-Severity Independence Assumption Is Costing You Premium](https://burning-cost.github.io/2027/05/15/frequency-severity-independence-is-costing-you-premium/)
+
 Challenges the independence assumption in the standard two-model GLM framework. Your frequency GLM and severity GLM are correct. The problem is multiplying their predictions together as though claim count and average severity are unrelated — they are not.
 
 ## The problem
@@ -38,6 +40,8 @@ This library gives you three methods to measure and correct for it:
 ```bash
 pip install insurance-frequency-severity
 ```
+
+> 💬 Questions or feedback? Start a [Discussion](https://github.com/burning-cost/insurance-frequency-severity/discussions). Found it useful? A ⭐ helps others find it.
 
 ## Quickstart
 
