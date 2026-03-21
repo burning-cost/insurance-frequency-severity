@@ -38,7 +38,7 @@ This library gives you three methods to measure and correct for it:
 ## Installation
 
 ```bash
-pip install insurance-frequency-severity
+uv add insurance-frequency-severity
 ```
 
 > 💬 Questions or feedback? Start a [Discussion](https://github.com/burning-cost/insurance-frequency-severity/discussions). Found it useful? A ⭐ helps others find it.
