@@ -10,9 +10,10 @@ The dataset format expected throughout the library is:
   - exposure: time at risk, typically in years (float, > 0)
 
 ``prepare_features`` converts a Pandas DataFrame (which may contain categoricals)
-to a numeric numpy array suitable for PyTorch, using sklearn's
-``ColumnTransformer`` under the hood.  It returns the transformer so you can
-apply the same encoding to held-out data.
+to a numeric numpy array.  It does not require torch.
+
+``FreqSevDataset`` and ``make_train_val_loaders`` are PyTorch utilities.
+Requires torch. Install with: pip install insurance-frequency-severity[neural]
 """
 
 from __future__ import annotations
@@ -21,17 +22,33 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import torch
-from torch import Tensor
-from torch.utils.data import Dataset
 
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
+try:
+    import torch
+    from torch import Tensor
+    from torch.utils.data import Dataset
+    _TORCH_AVAILABLE = True
+except ImportError:
+    _TORCH_AVAILABLE = False
+    torch = None  # type: ignore[assignment]
+    Tensor = None  # type: ignore[assignment]
+    Dataset = object  # type: ignore[assignment,misc]
+
+
+def _require_torch(feature: str = "This feature") -> None:
+    if not _TORCH_AVAILABLE:
+        raise ImportError(
+            f"{feature} requires torch. "
+            "Install with: pip install insurance-frequency-severity[neural]"
+        )
+
 
 # ---------------------------------------------------------------------------
-# Feature preprocessing
+# Feature preprocessing (no torch dependency)
 # ---------------------------------------------------------------------------
 
 def prepare_features(
@@ -45,6 +62,8 @@ def prepare_features(
     Numeric columns are standardised (zero mean, unit variance).  Categorical
     columns are one-hot encoded (unknown categories at inference are set to
     all-zero rows, not an error).
+
+    Does not require torch.
 
     Parameters
     ----------
@@ -110,6 +129,8 @@ class FreqSevDataset(Dataset):
     Each item is a dict with keys ``x``, ``log_exposure``, ``n_claims``,
     ``avg_severity``.
 
+    Requires torch. Install with: pip install insurance-frequency-severity[neural]
+
     Parameters
     ----------
     X:
@@ -130,6 +151,8 @@ class FreqSevDataset(Dataset):
         avg_severity: np.ndarray,
         exposure: np.ndarray,
     ) -> None:
+        _require_torch("FreqSevDataset")
+
         n = len(X)
         if not (len(n_claims) == len(avg_severity) == len(exposure) == n):
             raise ValueError("All arrays must have the same length.")
@@ -183,12 +206,14 @@ class FreqSevDataset(Dataset):
 
 
 def make_train_val_loaders(
-    dataset: FreqSevDataset,
+    dataset: "FreqSevDataset",
     val_fraction: float = 0.1,
     batch_size: int = 512,
     seed: int = 42,
 ) -> Tuple:
     """Split a dataset into train/val DataLoaders.
+
+    Requires torch. Install with: pip install insurance-frequency-severity[neural]
 
     Parameters
     ----------
@@ -205,6 +230,7 @@ def make_train_val_loaders(
     -------
     train_loader, val_loader : DataLoader, DataLoader
     """
+    _require_torch("make_train_val_loaders")
     from torch.utils.data import random_split, DataLoader
 
     n = len(dataset)

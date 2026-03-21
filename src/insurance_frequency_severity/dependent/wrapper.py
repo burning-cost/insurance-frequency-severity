@@ -16,6 +16,8 @@ Fitting requires three target arrays alongside the feature matrix:
 
 The ``score`` method returns the negative mean pure premium Poisson deviance as
 a maximisation target compatible with sklearn conventions.
+
+Requires torch. Install with: pip install insurance-frequency-severity[neural]
 """
 
 from __future__ import annotations
@@ -26,9 +28,17 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import torch
-from torch import Tensor
-from torch.utils.data import DataLoader
+
+try:
+    import torch
+    from torch import Tensor
+    from torch.utils.data import DataLoader
+    _TORCH_AVAILABLE = True
+except ImportError:
+    _TORCH_AVAILABLE = False
+    torch = None  # type: ignore[assignment]
+    Tensor = None  # type: ignore[assignment]
+    DataLoader = None  # type: ignore[assignment]
 
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_is_fitted
@@ -41,8 +51,18 @@ from insurance_frequency_severity.dependent.premium import PurePremiumEstimator
 logger = logging.getLogger(__name__)
 
 
+def _require_torch(feature: str = "This feature") -> None:
+    if not _TORCH_AVAILABLE:
+        raise ImportError(
+            f"{feature} requires torch. "
+            "Install with: pip install insurance-frequency-severity[neural]"
+        )
+
+
 class DependentFSModel(BaseEstimator):
     """Sklearn-compatible dependent frequency-severity neural model.
+
+    Requires torch. Install with: pip install insurance-frequency-severity[neural]
 
     Parameters
     ----------
@@ -126,6 +146,8 @@ class DependentFSModel(BaseEstimator):
         -------
         self
         """
+        _require_torch("DependentFSModel.fit")
+
         X = np.asarray(X, dtype=np.float32)
         n_claims = np.asarray(n_claims, dtype=np.float32)
         avg_severity = np.asarray(avg_severity, dtype=np.float32)
@@ -178,10 +200,12 @@ class DependentFSModel(BaseEstimator):
     # Predict helpers
     # ------------------------------------------------------------------
 
-    def _to_tensor(self, arr: np.ndarray, dtype=torch.float32) -> Tensor:
+    def _to_tensor(self, arr: np.ndarray, dtype=None) -> "Tensor":
+        if dtype is None:
+            dtype = torch.float32
         return torch.tensor(np.asarray(arr, dtype=np.float32), dtype=dtype)
 
-    def _device(self) -> torch.device:
+    def _device(self) -> "torch.device":
         return next(self.model_.parameters()).device
 
     def _forward_numpy(
@@ -189,14 +213,14 @@ class DependentFSModel(BaseEstimator):
         X: np.ndarray,
         exposure: np.ndarray,
         n_claims_for_gamma: Optional[np.ndarray] = None,
-    ) -> Tuple[Tensor, Tensor, Tensor]:
+    ) -> Tuple["Tensor", "Tensor", "Tensor"]:
         """Run forward pass and return (log_lambda, log_mu, phi) as CPU tensors."""
         check_is_fitted(self, "model_")
         self.model_.eval()
         device = self._device()
         x_t = self._to_tensor(X).to(device)
         log_exp_t = self._to_tensor(np.log(exposure.astype(np.float32))).to(device)
-        n_t: Optional[Tensor] = None
+        n_t: Optional["Tensor"] = None
         if self.use_explicit_gamma:
             # When use_explicit_gamma=True the severity head requires n_claims.
             # Default to zeros (N=0) when not provided — gives baseline severity
@@ -235,6 +259,7 @@ class DependentFSModel(BaseEstimator):
         np.ndarray of shape (n,)
             Expected claims per unit exposure for each policy.
         """
+        _require_torch("DependentFSModel.predict_frequency")
         exposure = np.asarray(exposure, dtype=np.float32)
         log_lambda, _, _ = self._forward_numpy(X, exposure)
         lambda_with_exp = torch.exp(log_lambda).numpy()
@@ -265,6 +290,7 @@ class DependentFSModel(BaseEstimator):
         np.ndarray of shape (n,)
             Expected average severity (baseline, N=0).
         """
+        _require_torch("DependentFSModel.predict_severity")
         n = len(X)
         if exposure is None:
             exposure = np.ones(n, dtype=np.float32)
@@ -300,6 +326,7 @@ class DependentFSModel(BaseEstimator):
         np.ndarray of shape (n,)
             Pure premium per unit exposure.
         """
+        _require_torch("DependentFSModel.predict_pure_premium")
         check_is_fitted(self, "model_")
         exposure = np.asarray(exposure, dtype=np.float32)
         n = len(X)
@@ -351,6 +378,7 @@ class DependentFSModel(BaseEstimator):
         -------
         np.ndarray of shape (n, latent_dim)
         """
+        _require_torch("DependentFSModel.latent_repr")
         check_is_fitted(self, "model_")
         device = self._device()
         x_t = self._to_tensor(X).to(device)
@@ -381,6 +409,7 @@ class DependentFSModel(BaseEstimator):
         float
             Negative mean Poisson deviance.
         """
+        _require_torch("DependentFSModel.score")
         exposure = np.asarray(exposure, dtype=np.float32)
         freq_pred = self.predict_frequency(X, exposure)
         freq_actual_per_unit = n_claims.astype(np.float32) / exposure

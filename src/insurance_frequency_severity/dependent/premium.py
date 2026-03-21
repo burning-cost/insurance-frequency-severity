@@ -30,6 +30,8 @@ Two computation modes are provided:
 
    For most practical purposes the semi-analytical result is adequate and much
    faster than MC at large portfolio sizes.
+
+Requires torch. Install with: pip install insurance-frequency-severity[neural]
 """
 
 from __future__ import annotations
@@ -38,12 +40,29 @@ import math
 from typing import Optional
 
 import numpy as np
-import torch
-from torch import Tensor
+
+try:
+    import torch
+    from torch import Tensor
+    _TORCH_AVAILABLE = True
+except ImportError:
+    _TORCH_AVAILABLE = False
+    torch = None  # type: ignore[assignment]
+    Tensor = None  # type: ignore[assignment]
+
+
+def _require_torch(feature: str = "This feature") -> None:
+    if not _TORCH_AVAILABLE:
+        raise ImportError(
+            f"{feature} requires torch. "
+            "Install with: pip install insurance-frequency-severity[neural]"
+        )
 
 
 class PurePremiumEstimator:
     """Compute per-policy pure premium predictions from model outputs.
+
+    Requires torch. Install with: pip install insurance-frequency-severity[neural]
 
     This class is designed to be called after a forward pass of
     ``DependentFreqSevNet``.  It does not hold a reference to the model;
@@ -66,17 +85,18 @@ class PurePremiumEstimator:
         seed: int = 42,
         device: str = "cpu",
     ) -> None:
+        _require_torch("PurePremiumEstimator")
         self.n_mc = n_mc
         self.seed = seed
         self.device = torch.device(device)
 
     def monte_carlo(
         self,
-        log_lambda: Tensor,
-        log_mu: Tensor,
-        phi: Tensor,
-        exposure: Tensor,
-    ) -> Tensor:
+        log_lambda: "Tensor",
+        log_mu: "Tensor",
+        phi: "Tensor",
+        exposure: "Tensor",
+    ) -> "Tensor":
         """Monte Carlo pure premium estimate.
 
         Samples N_i ~ Poisson(λ_i · t_i / t_i) [unit-rate, then N_i is the
@@ -146,11 +166,11 @@ class PurePremiumEstimator:
 
     def analytical(
         self,
-        log_lambda: Tensor,
-        log_mu_base: Tensor,
-        gamma: Tensor,
-        exposure: Tensor,
-    ) -> Tensor:
+        log_lambda: "Tensor",
+        log_mu_base: "Tensor",
+        gamma: "Tensor",
+        exposure: "Tensor",
+    ) -> "Tensor":
         """Semi-analytical pure premium for the GGS conditional covariate model.
 
         Uses the closed form from Garrido-Genest-Schulz (2016) / NeurFS Theorem 1:
@@ -197,10 +217,10 @@ class PurePremiumEstimator:
 
     def confidence_interval(
         self,
-        log_lambda: Tensor,
-        log_mu: Tensor,
-        phi: Tensor,
-        exposure: Tensor,
+        log_lambda: "Tensor",
+        log_mu: "Tensor",
+        phi: "Tensor",
+        exposure: "Tensor",
         alpha: float = 0.05,
     ) -> tuple:
         """Bootstrap confidence interval on the pure premium via MC.

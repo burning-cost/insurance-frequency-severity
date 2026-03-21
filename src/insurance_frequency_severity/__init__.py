@@ -6,8 +6,10 @@ Challenges the independence assumption in the standard two-model GLM framework.
 Implements Sarmanov copula for mixed discrete-continuous margins, Gaussian copula
 as a comparison, and Garrido's conditional method as the simplest baseline.
 
-For the neural two-part dependent model with shared encoder trunk, see the
-``dependent`` subpackage:
+The neural two-part dependent model lives in the ``dependent`` subpackage and
+requires torch. Install with: pip install insurance-frequency-severity[neural]
+
+For the neural two-part dependent model with shared encoder trunk:
 
 >>> from insurance_frequency_severity.dependent import DependentFSModel
 
@@ -34,9 +36,18 @@ from insurance_frequency_severity.diagnostics import (
     compare_copulas,
 )
 from insurance_frequency_severity.report import JointModelReport
-from insurance_frequency_severity import dependent
 
-__version__ = "0.2.0"
+# ``dependent`` is loaded lazily so that importing this package does not
+# require torch.  Access it as insurance_frequency_severity.dependent or
+# import directly from the subpackage.
+def __getattr__(name: str):
+    if name == "dependent":
+        from insurance_frequency_severity import dependent
+        return dependent
+    raise AttributeError(f"module 'insurance_frequency_severity' has no attribute {name!r}")
+
+
+__version__ = "0.2.5"
 
 __all__ = [
     "SarmanovCopula",
