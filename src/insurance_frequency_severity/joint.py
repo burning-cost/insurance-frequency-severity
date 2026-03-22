@@ -224,6 +224,19 @@ class JointFreqSev:
         kernel_theta: float = 0.5,
         kernel_alpha: float = 0.001,
     ):
+        _valid_copulas = ('sarmanov', 'gaussian', 'fgm')
+        if copula not in _valid_copulas:
+            raise ValueError(
+                f"copula_family must be one of {_valid_copulas}, got {copula!r}"
+            )
+        if kernel_theta is not None and kernel_theta <= 0:
+            raise ValueError(
+                f"kernel_theta must be positive, got {kernel_theta}"
+            )
+        if kernel_alpha is not None and kernel_alpha <= 0:
+            raise ValueError(
+                f"kernel_alpha must be positive, got {kernel_alpha}"
+            )
         self.freq_glm = freq_glm
         self.sev_glm = sev_glm
         self.copula_family = copula
@@ -1065,9 +1078,11 @@ class ConditionalFreqSev:
 
         Correction = exp(gamma) * exp(mu_n * (exp(gamma) - 1))
 
-        For a log-link severity model with Poisson frequency, this is the
-        exact closed-form correction. For general link functions or non-Poisson
-        frequency, it is an approximation. For general link functions, it is an approximation.
+        For a log-link severity model with Poisson frequency with log-link
+        severity, this formula is a first-order Taylor approximation valid for
+        small gamma (|gamma| < 0.5). For larger gamma values, or with non-Poisson
+        frequency or non-log-link severity, the approximation error may be
+        substantial.
 
         Returns
         -------
@@ -1075,6 +1090,15 @@ class ConditionalFreqSev:
         """
         if self.gamma_ is None:
             raise RuntimeError("Must call .fit() first")
+
+        if abs(self.gamma_) > 0.5:
+            warnings.warn(
+                f"gamma={self.gamma_:.4f}: the Garrido first-order approximation is "
+                f"unreliable for |gamma| > 0.5. Consider using JointFreqSev (copula) "
+                f"for more accurate dependence correction.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
 
         if X is not None:
             mu_n = np.asarray(self.freq_glm.predict(X), dtype=float)

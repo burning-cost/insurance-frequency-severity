@@ -107,7 +107,13 @@ class LaplaceKernelNB(Kernel):
         r = 1.0 / alpha
         p = 1.0 / (1.0 + mu * alpha)
         # M_N(theta) = (p / (1 - (1-p)*exp(-theta)))^r
-        val = (p / (1.0 - (1.0 - p) * np.exp(-self.theta))) ** r
+        denom = 1.0 - (1.0 - p) * np.exp(-self.theta)
+        if np.any(denom <= 0):
+            raise ValueError(
+                "MGF domain condition violated for NB kernel: "
+                "1 - (1-p)*exp(-theta) <= 0. theta is too small for these parameters."
+            )
+        val = (p / denom) ** r
         return np.asarray(val, dtype=float)
 
     def centred(self, n: np.ndarray, mu: float, alpha: float) -> np.ndarray:
@@ -416,9 +422,14 @@ class SarmanovCopula:
         s = np.asarray(s, dtype=float)
 
         # Handle per-observation parameters (arrays of dicts) or single dict
+        fp_alpha = None  # initialised before conditional so it is always defined
         if isinstance(freq_params, dict):
             fp_mu = np.full_like(n, freq_params["mu"])
             if self.freq_family == "nb":
+                if "alpha" not in freq_params:
+                    raise ValueError(
+                        "freq_params must contain 'alpha' for NB family"
+                    )
                 fp_alpha = np.full_like(n, freq_params["alpha"])
         else:
             fp_mu = np.array([p["mu"] for p in freq_params])
