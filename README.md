@@ -292,3 +292,17 @@ Built by [Burning Cost](https://github.com/burning-cost). MIT licence.
 | [insurance-severity](https://github.com/burning-cost/insurance-severity) | Heavy-tail severity with composite Pareto models and ILFs — use for the severity component when tails matter |
 | [insurance-quantile](https://github.com/burning-cost/insurance-quantile) | Quantile GBM for tail risk — non-parametric complement when the full distributional structure is uncertain |
 
+
+---
+
+## Part of the Burning Cost Toolkit
+
+Open-source Python libraries for UK personal lines insurance pricing. [Browse all libraries](https://burning-cost.github.io/tools/)
+
+| Library | Description |
+|---------|-------------|
+| [insurance-conformal](https://github.com/burning-cost/insurance-conformal) | Distribution-free prediction intervals — `FrequencySeverityConformal` provides joint f/s coverage guarantees |
+| [insurance-credibility](https://github.com/burning-cost/insurance-credibility) | Bühlmann-Straub credibility — blends frequency and severity estimates for thin segments |
+| [insurance-causal](https://github.com/burning-cost/insurance-causal) | DML causal inference — establishes whether frequency-severity dependence is causal or driven by observed confounders |
+| [insurance-monitoring](https://github.com/burning-cost/insurance-monitoring) | Model drift detection — monitors frequency and severity component calibration separately over time |
+| [insurance-governance](https://github.com/burning-cost/insurance-governance) | Model validation and MRM governance — produces the sign-off pack for joint frequency-severity models |
