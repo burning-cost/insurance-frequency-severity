@@ -47,7 +47,12 @@ def __getattr__(name: str):
     raise AttributeError(f"module 'insurance_frequency_severity' has no attribute {name!r}")
 
 
-__version__ = "0.2.5"
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("insurance-frequency-severity")
+except PackageNotFoundError:
+    __version__ = "0.0.0"  # not installed
 
 __all__ = [
     "SarmanovCopula",
