@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "insurance-frequency-severity"
-version = "0.2.6"
+version = "0.2.7"
 description = "Sarmanov copula joint frequency-severity modelling for UK personal lines insurance, with neural two-part dependent model"
 readme = "README.md"
 license = "MIT"
@@ -44,7 +44,7 @@ dependencies = [
     "scipy>=1.10",
     "statsmodels>=0.14.5",
     "matplotlib>=3.6",
-    "scikit-learn>=1.2.0",
+    "scikit-learn>=1.3.0",
 ]
 
 [project.optional-dependencies]
