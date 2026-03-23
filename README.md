@@ -15,6 +15,14 @@ Merged from: `insurance-frequency-severity` (Sarmanov/Gaussian copula) and `insu
 
 Challenges the independence assumption in the standard two-model GLM framework. Your frequency GLM and severity GLM are correct. The problem is multiplying their predictions together as though claim count and average severity are unrelated — they are not.
 
+## Why use this?
+
+- The standard UK motor pricing approach (pure premium = E[N] × E[S]) assumes frequency and severity are independent given rating factors — they are not. NCD structure suppresses borderline claims, creating a systematic negative correlation. Vernic, Bolancé & Alemany (2022) found this mismeasurement costs €5–55+ per policyholder; the directional effect in UK motor is the same.
+- The Sarmanov copula handles the discrete-continuous mixed margins problem correctly — no probability integral transform approximation for the count margin, which is not well-defined for discrete distributions. The Gaussian copula comparison and Garrido conditional fallback are also included so you can present the methodology choice to a pricing committee.
+- IFM estimation: you plug in your already-fitted statsmodels GLM objects. There is no need to refit the marginals — the library estimates the dependence parameter omega on top of your existing models, and returns analytical (closed-form) correction factors per policy at scoring time.
+- DependenceTest first: run the permutation test for independence before committing to a correction. If the test does not reject, use the simpler independent model. The benchmark shows that even when omega is not statistically significant, the correction can absorb marginal model error (28.6% MAE improvement on the benchmark DGP).
+- Generates a JointModelReport HTML document (omega estimate, CI, Spearman rho, AIC/BIC comparison, correction factor distribution) suitable for a pricing committee or model validation pack.
+
 ## The problem
 
 Every UK motor pricing team runs two GLMs:
