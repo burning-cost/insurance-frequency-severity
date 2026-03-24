@@ -7,7 +7,7 @@
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/burning-cost/insurance-frequency-severity/blob/main/notebooks/quickstart.ipynb)
 
 
-Sarmanov copula joint frequency-severity modelling for UK personal lines insurance.
+Every UK motor pricing team multiplies a Poisson GLM by a Gamma GLM and calls it pure premium — but the NCD structure suppresses borderline claims, creating a systematic negative correlation between claim count and average severity that the multiplication ignores. insurance-frequency-severity estimates that dependence using the Sarmanov bivariate distribution, which handles the discrete-continuous mixed margins problem correctly, and produces per-policy correction factors without the PIT approximation issues of standard copula approaches.
 
 Merged from: `insurance-frequency-severity` (Sarmanov/Gaussian copula) and `insurance-dependent-fs` (neural two-part model).
 
@@ -301,6 +301,15 @@ The canonical use case is a portfolio where omega is positive and statistically 
 ## Databricks Notebook
 
 A validation notebook with known-DGP omega recovery and premium comparison is at `notebooks/databricks_validation.py`. A broader benchmark notebook is at `notebooks/benchmark.py`. Both run on Databricks serverless compute with no external data required.
+
+## Limitations
+
+- Stable omega estimation requires approximately 20,000 policyholder-years with at least 2,000 observed claims. Smaller books produce wide confidence intervals on the dependence parameter. Always run `DependenceTest` before fitting — if independence cannot be rejected (p > 0.05), do not apply corrections.
+- The Sarmanov IFM estimator uses only policies with at least one observed claim. Zero-claim policies contribute no information about the frequency-severity dependence parameter. If your zero-claim rate is above 90%, the effective estimation sample is very small relative to total book size.
+- Per-policy analytical corrections are available only with `copula="sarmanov"`. The Gaussian and FGM copulas return a single portfolio-average correction factor. If heterogeneous corrections by risk segment matter, Sarmanov is the only option.
+- The library wraps statsmodels GLM objects. Non-statsmodels models may work via `.predict()` but kernel parameters are inferred from statsmodels-specific attributes. For non-statsmodels GLMs, pass parameter dictionaries directly and validate the kernel construction manually.
+- The premium correction `E[N×S] / (E[N] × E[S])` is computed at scoring time and not recalibrated as the portfolio evolves. If the NCD suppression effect changes (e.g., the NCD scale is restructured), re-estimate omega on recent data. Stale corrections can move in the wrong direction.
+
 
 ## References
 
