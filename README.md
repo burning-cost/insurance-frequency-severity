@@ -15,6 +15,10 @@ Merged from: `insurance-frequency-severity` (Sarmanov/Gaussian copula) and `insu
 
 Challenges the independence assumption in the standard two-model GLM framework. Your frequency GLM and severity GLM are correct. The problem is multiplying their predictions together as though claim count and average severity are unrelated — they are not.
 
+## Part of the Burning Cost stack
+
+Takes claims data and your existing fitted statsmodels GLM objects for frequency and severity. Feeds Sarmanov-corrected joint premium estimates into [insurance-optimise](https://github.com/burning-cost/insurance-optimise) (more accurate pure premium inputs) and [insurance-conformal](https://github.com/burning-cost/insurance-conformal) (uncertainty quantification on the corrected predictions). → [See the full stack](https://burning-cost.github.io/stack/)
+
 ## Why use this?
 
 - The standard UK motor pricing approach (pure premium = E[N] × E[S]) assumes frequency and severity are independent given rating factors — they are not. NCD structure suppresses borderline claims, creating a systematic negative correlation. Vernic, Bolancé & Alemany (2022) found this mismeasurement costs €5–55+ per policyholder; the directional effect in UK motor is the same.
