@@ -1,0 +1,85 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "insurance-frequency-severity"
+abstract: >
+  Sarmanov copula joint frequency-severity modelling for UK personal lines
+  insurance. Challenges the independence assumption in the standard two-model
+  GLM framework. Implements IFM estimation of the Sarmanov bivariate
+  distribution for NB/Poisson frequency and Gamma/Lognormal severity, Gaussian
+  copula comparison, and Garrido conditional approach. Includes a permutation
+  independence test and a model report generator.
+authors:
+  - name: "Burning Cost Contributors"
+url: "https://github.com/burning-cost/insurance-frequency-severity"
+repository-code: "https://github.com/burning-cost/insurance-frequency-severity"
+license: MIT
+version: "0.2.7"
+date-released: "2026-03-21"
+keywords:
+  - insurance
+  - frequency-severity
+  - Sarmanov copula
+  - dependence modelling
+  - actuarial
+references:
+  - type: article
+    title: "Sarmanov distribution for modeling dependence between the frequency and the average severity of insurance claims"
+    authors:
+      - family-names: Vernic
+        given-names: Raluca
+      - family-names: Bolancé
+        given-names: Catalina
+      - family-names: Alemany
+        given-names: Ramon
+    journal: "Insurance: Mathematics and Economics"
+    volume: 102
+    start: 111
+    end: 125
+    year: 2022
+    doi: "10.1016/j.insmatheco.2021.11.003"
+  - type: article
+    title: "Generalized linear models for dependent frequency and severity of insurance claims"
+    authors:
+      - family-names: Garrido
+        given-names: Jose
+      - family-names: Genest
+        given-names: Christian
+      - family-names: Schulz
+        given-names: Jens
+    journal: "Insurance: Mathematics and Economics"
+    volume: 70
+    start: 205
+    end: 215
+    year: 2016
+    doi: "10.1016/j.insmatheco.2016.06.006"
+  - type: article
+    title: "A dependent frequency-severity approach to modeling longitudinal insurance claims"
+    authors:
+      - family-names: Lee
+        given-names: Gee Y.
+      - family-names: Shi
+        given-names: Peng
+    journal: "Insurance: Mathematics and Economics"
+    volume: 87
+    start: 115
+    end: 129
+    year: 2019
+    doi: "10.1016/j.insmatheco.2019.04.004"
+  - type: article
+    title: "A mixed copula model for insurance claims and claim sizes"
+    authors:
+      - family-names: Czado
+        given-names: Claudia
+      - family-names: Kastenmeier
+        given-names: Rainer
+      - family-names: Brechmann
+        given-names: Eike Christian
+      - family-names: Min
+        given-names: Aleksey
+    journal: "Scandinavian Actuarial Journal"
+    issue: 4
+    start: 278
+    end: 305
+    year: 2012
+    doi: "10.1080/03461238.2010.546490"
