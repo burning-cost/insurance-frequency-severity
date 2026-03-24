@@ -345,3 +345,8 @@ Open-source Python libraries for UK personal lines insurance pricing. [Browse al
 | [insurance-causal](https://github.com/burning-cost/insurance-causal) | DML causal inference — establishes whether frequency-severity dependence is causal or driven by observed confounders |
 | [insurance-monitoring](https://github.com/burning-cost/insurance-monitoring) | Model drift detection — monitors frequency and severity component calibration separately over time |
 | [insurance-governance](https://github.com/burning-cost/insurance-governance) | Model validation and MRM governance — produces the sign-off pack for joint frequency-severity models |
+
+
+## Training Course
+
+Want structured learning? [Insurance Pricing in Python](https://burning-cost.github.io/course) is a 12-module course covering the full pricing workflow. Module 4 covers frequency-severity modelling — Poisson/Gamma split, Sarmanov copulas, and joint prediction intervals. £97 one-time.
