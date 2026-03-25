@@ -336,6 +336,14 @@ Built by [Burning Cost](https://github.com/burning-cost). MIT licence.
 | [insurance-quantile](https://github.com/burning-cost/insurance-quantile) | Quantile GBM for tail risk — non-parametric complement when the full distributional structure is uncertain |
 
 
+
+## Community
+
+- **Questions?** Start a [Discussion](https://github.com/burning-cost/insurance-frequency-severity/discussions)
+- **Found a bug?** Open an [Issue](https://github.com/burning-cost/insurance-frequency-severity/issues)
+- **Blog & tutorials:** [burning-cost.github.io](https://burning-cost.github.io)
+
+If this library saves you time, a star on GitHub helps others find it.
 ---
 
 ## Part of the Burning Cost Toolkit
