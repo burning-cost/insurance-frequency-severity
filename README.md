@@ -142,6 +142,10 @@ corrections = model.premium_correction()
 print(corrections[["mu_n", "mu_s", "correction_factor", "premium_joint"]].describe())
 ```
 
+---
+
+If this is useful, a ⭐ on GitHub helps others find it.
+
 ## GLM compatibility
 
 This library is designed for statsmodels GLM objects. It detects marginal families via `model.family` (statsmodels convention) and extracts dispersion from `model.scale`. Non-statsmodels objects with `.predict()` and `.fittedvalues` may work, but kernel parameters will be inferred from statsmodels-specific attributes and could silently produce wrong results. For non-statsmodels GLMs, pass parameter dictionaries directly.
