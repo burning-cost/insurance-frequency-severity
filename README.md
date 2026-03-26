@@ -5,6 +5,7 @@
 [![Tests](https://github.com/burning-cost/insurance-frequency-severity/actions/workflows/tests.yml/badge.svg)](https://github.com/burning-cost/insurance-frequency-severity/actions/workflows/tests.yml)
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/burning-cost/insurance-frequency-severity/blob/main/notebooks/quickstart.ipynb)
+[![nbviewer](https://img.shields.io/badge/render-nbviewer-orange)](https://nbviewer.org/github/burning-cost/insurance-frequency-severity/blob/main/notebooks/quickstart.ipynb)
 
 
 Every UK motor pricing team multiplies a Poisson GLM by a Gamma GLM and calls it pure premium — but the NCD structure suppresses borderline claims, creating a systematic negative correlation between claim count and average severity that the multiplication ignores. insurance-frequency-severity estimates that dependence using the Sarmanov bivariate distribution, which handles the discrete-continuous mixed margins problem correctly, and produces per-policy correction factors without the PIT approximation issues of standard copula approaches.
