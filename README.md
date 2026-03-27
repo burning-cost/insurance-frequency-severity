@@ -1,124 +1,54 @@
 # insurance-frequency-severity
 
-[![PyPI](https://img.shields.io/pypi/v/insurance-frequency-severity)](https://pypi.org/project/insurance-frequency-severity/)
-[![Python](https://img.shields.io/pypi/pyversions/insurance-frequency-severity)](https://pypi.org/project/insurance-frequency-severity/)
-[![Tests](https://github.com/burning-cost/insurance-frequency-severity/actions/workflows/tests.yml/badge.svg)](https://github.com/burning-cost/insurance-frequency-severity/actions/workflows/tests.yml)
-[![License](https://img.shields.io/badge/license-MIT-green)]()
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/burning-cost/insurance-frequency-severity/blob/main/notebooks/quickstart.ipynb)
-[![nbviewer](https://img.shields.io/badge/render-nbviewer-orange)](https://nbviewer.org/github/burning-cost/insurance-frequency-severity/blob/main/notebooks/quickstart.ipynb)
+[![PyPI](https://img.shields.io/pypi/v/insurance-frequency-severity)](https://pypi.org/project/insurance-frequency-severity/) [![Python](https://img.shields.io/pypi/pyversions/insurance-frequency-severity)](https://pypi.org/project/insurance-frequency-severity/) [![Tests](https://github.com/burning-cost/insurance-frequency-severity/actions/workflows/tests.yml/badge.svg)](https://github.com/burning-cost/insurance-frequency-severity/actions/workflows/tests.yml) [![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/burning-cost/insurance-frequency-severity/blob/main/LICENSE) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/burning-cost/insurance-frequency-severity/blob/main/notebooks/quickstart.ipynb) [![nbviewer](https://img.shields.io/badge/render-nbviewer-orange)](https://nbviewer.org/github/burning-cost/insurance-frequency-severity/blob/main/notebooks/quickstart.ipynb)
 
-
-Every UK motor pricing team multiplies a Poisson GLM by a Gamma GLM and calls it pure premium — but the NCD structure suppresses borderline claims, creating a systematic negative correlation between claim count and average severity that the multiplication ignores. insurance-frequency-severity estimates that dependence using the Sarmanov bivariate distribution, which handles the discrete-continuous mixed margins problem correctly, and produces per-policy correction factors without the PIT approximation issues of standard copula approaches.
-
-Merged from: `insurance-frequency-severity` (Sarmanov/Gaussian copula) and `insurance-dependent-fs` (neural two-part model).
-
-**Blog post:** [Your Frequency-Severity Independence Assumption Is Costing You Premium](https://burning-cost.github.io/2027/05/15/frequency-severity-independence-is-costing-you-premium/)
-
-Challenges the independence assumption in the standard two-model GLM framework. Your frequency GLM and severity GLM are correct. The problem is multiplying their predictions together as though claim count and average severity are unrelated — they are not.
-
-## Part of the Burning Cost stack
-
-Takes claims data and your existing fitted statsmodels GLM objects for frequency and severity. Feeds Sarmanov-corrected joint premium estimates into [insurance-optimise](https://github.com/burning-cost/insurance-optimise) (more accurate pure premium inputs) and [insurance-conformal](https://github.com/burning-cost/insurance-conformal) (uncertainty quantification on the corrected predictions). → [See the full stack](https://burning-cost.github.io/stack/)
-
-## Why use this?
-
-- The standard UK motor pricing approach (pure premium = E[N] × E[S]) assumes frequency and severity are independent given rating factors — they are not. NCD structure suppresses borderline claims, creating a systematic negative correlation. Vernic, Bolancé & Alemany (2022) found this mismeasurement costs €5–55+ per policyholder; the directional effect in UK motor is the same.
-- The Sarmanov copula handles the discrete-continuous mixed margins problem correctly — no probability integral transform approximation for the count margin, which is not well-defined for discrete distributions. The Gaussian copula comparison and Garrido conditional fallback are also included so you can present the methodology choice to a pricing committee.
-- IFM estimation: you plug in your already-fitted statsmodels GLM objects. There is no need to refit the marginals — the library estimates the dependence parameter omega on top of your existing models, and returns analytical (closed-form) correction factors per policy at scoring time.
-- DependenceTest first: run the permutation test for independence before committing to a correction. If the test does not reject, use the simpler independent model. The benchmark shows that even when omega is not statistically significant, the correction can absorb marginal model error (28.6% MAE improvement on the benchmark DGP).
-- Generates a JointModelReport HTML document (omega estimate, CI, Spearman rho, AIC/BIC comparison, correction factor distribution) suitable for a pricing committee or model validation pack.
+---
 
 ## The problem
 
-Every UK motor pricing team runs two GLMs:
+Every UK motor pricing team multiplies a Poisson frequency GLM by a Gamma severity GLM and calls it pure premium. This assumes claim count and average severity are independent given the rating factors — they are not.
 
-```
-Pure premium = E[N|x] × E[S|x]
-```
+In UK motor, the NCD structure suppresses borderline claims: policyholders aware of the NCD threshold do not report near-miss incidents. The result is a systematic negative correlation between claim count and average severity. Ignoring this biases the pure premium, and the bias concentrates in your highest-risk accounts. Vernic, Bolancé and Alemany (2022) measured this at €5–55+ per policyholder on a Spanish auto book. The directional effect in UK motor is the same.
 
-This assumes N and S are independent given rating factors x. The assumption is almost certainly wrong. In UK motor, the No Claims Discount structure suppresses borderline claims: policyholders with frequent small claims are aware of the NCD threshold and do not report near-miss incidents. The result is a systematic negative correlation between claim count and average severity.
+**Blog post:** [Your Frequency-Severity Independence Assumption Is Costing You Premium](https://burning-cost.github.io/2027/05/15/frequency-severity-independence-is-costing-you-premium/)
 
-Vernic, Bolancé, and Alemany (2022) found this mismeasurement amounts to €5–55+ per policyholder on a Spanish auto book. The directional effect in UK motor is the same; the magnitude depends on your book.
+---
 
-This library gives you three methods to measure and correct for it:
+## Why this library?
 
-1. **Sarmanov copula (primary)**: Bivariate Sarmanov distribution for NB/Poisson frequency × Gamma/Lognormal severity. Handles the discrete-continuous mixed margins problem correctly — no probability integral transform approximation needed for the count margin. IFM estimation: you plug in your fitted GLM objects, we estimate omega.
+Standard copulas (Gaussian, Clayton) require a probability integral transform for the discrete frequency margin — and Sklar's theorem is not unique for discrete distributions. The Sarmanov bivariate distribution sidesteps this entirely by working directly with the joint density, giving you analytically closed-form per-policy correction factors without simulation.
 
-2. **Gaussian copula (comparison)**: Standard approach from Czado et al. (2012). Uses PIT approximation for the discrete margin. Good for presenting rho in familiar terms.
+IFM estimation means you plug in your already-fitted statsmodels GLM objects. The library estimates the dependence parameter omega on top of your existing models. You do not refit the marginals.
 
-3. **Garrido conditional (fallback)**: Adds N as a covariate in the severity GLM. No copula, no new methodology — just a single extra GLM parameter. Works on smaller books where omega estimation would be unreliable.
+---
 
-## Installation
+## Compared to alternatives
+
+| | Independent GLM multiplication | Gaussian copula | Tweedie single model | **insurance-frequency-severity** |
+|---|---|---|---|---|
+| Handles discrete-continuous margins correctly | No (assumption) | Partial (PIT approximation) | N/A | Yes (Sarmanov) |
+| Per-policy correction factors | No | Portfolio average only | N/A | Yes |
+| Uses existing GLM objects | Yes | Requires refitting | No | Yes (IFM) |
+| Test for dependence first | No | No | No | Yes (`DependenceTest`) |
+| AIC/BIC copula comparison | No | No | No | Yes |
+| HTML model report | No | No | No | Yes (`JointModelReport`) |
+
+---
+
+## Quickstart
 
 ```bash
 uv add insurance-frequency-severity
 ```
 
-## Expected Performance
-
-Validated on a 30,000-policy synthetic UK motor book with planted positive Sarmanov dependence (omega=3.5). Results from `notebooks/databricks_validation.py` — pure Sarmanov DGP with known omega, so the IFM estimator targets the planted parameter directly.
-
-**Independence vs Sarmanov copula:**
-
-| Metric | Independence | Empirical CF | Sarmanov copula |
-|--------|-------------|--------------|-----------------|
-| MAE vs oracle (lower better) | baseline | partial | best |
-| Portfolio premium bias | -3% to -8% | ~0% | ~0% |
-| Segment ranking (high-risk decile) | wrong | wrong | correct |
-| Omega recovery | — | — | within 20% |
-| Fit time | <1s | <1s | <1s |
-
-- **Portfolio bias:** The independence model understates aggregate expected loss cost by 3-8% when omega is moderate-positive. This is not a rounding error — it is systematic mispricing that concentrates in your highest-risk accounts.
-- **Empirical correction factor:** Fixes the aggregate bias (applying a flat scalar) but does not correct the segment-level ordering. High-risk decile policies are still underpriced relative to low-risk after the empirical correction.
-- **Sarmanov copula:** Recovers the planted omega within 20% and produces per-policy correction factors that correctly re-rank segments. The correction is analytical (no simulation), so scoring is as fast as the independence model.
-- **Omega recovery:** IFM is asymptotically unbiased on pure Sarmanov data. With 21k training policies and 2k+ claims, the relative error is typically 10-20%.
-- **Where the bias concentrates:** Top risk decile (high-frequency, high-severity commercial risks). The correction factor for the top decile is 1.05-1.15× — 5-15% additional premium needed versus what the independence model charges.
-
-The full validation notebook is at `notebooks/databricks_validation.py`. The DGP takes 3-5 minutes to generate (30k per-policy Sarmanov samples); the fit itself takes under 1 second.
-
-## Quickstart
-
 ```python
-import numpy as np
-import pandas as pd
 import statsmodels.api as sm
 from insurance_frequency_severity import JointFreqSev, DependenceTest
 
-rng = np.random.default_rng(42)
-n_policies = 5000
-# Synthetic motor book: claim count and average severity per policy
-claim_count = rng.poisson(0.10, size=n_policies)
-avg_severity = np.where(
-    claim_count > 0,
-    rng.gamma(shape=3.0, scale=800.0, size=n_policies),
-    np.nan,
-)
-X = np.column_stack([
-    rng.normal(35, 8, n_policies),   # age
-    rng.normal(5, 2, n_policies),    # ncb
-])
-claims_df = pd.DataFrame({
-    "claim_count": claim_count,
-    "avg_severity": avg_severity,
-})
-
-# Fit marginal GLMs
-X_df = pd.DataFrame(X, columns=["age", "ncb"])
-X_const = sm.add_constant(X_df)
-my_nb_glm = sm.GLM(
-    claim_count, X_const, family=sm.families.NegativeBinomial(alpha=0.8)
-).fit()
-claims_mask = claim_count > 0
-my_gamma_glm = sm.GLM(
-    avg_severity[claims_mask],
-    X_const[claims_mask],
-    family=sm.families.Gamma(link=sm.families.links.Log()),
-).fit()
-
-# Test for dependence first
+# Test for dependence before committing to a correction
 test = DependenceTest()
 test.fit(n=claim_count[claims_mask], s=avg_severity[claims_mask])
-print(test.summary())
+print(test.summary())  # Kendall tau, Spearman rho, permutation p-values
 
 # Fit joint model — accepts your existing fitted GLMs
 model = JointFreqSev(
@@ -126,239 +56,193 @@ model = JointFreqSev(
     sev_glm=my_gamma_glm,  # fitted statsmodels Gamma GLM
     copula="sarmanov",
 )
-model.fit(
-    claims_df,
-    n_col="claim_count",
-    s_col="avg_severity",
-)
+model.fit(claims_df, n_col="claim_count", s_col="avg_severity")
 
-# Check dependence parameter and confidence interval
-print(model.dependence_summary())
-
-# Get correction factors for your in-force book
 corrections = model.premium_correction()
 print(corrections[["mu_n", "mu_s", "correction_factor", "premium_joint"]].describe())
 ```
 
 ---
 
-## GLM compatibility
+## The three methods
 
-This library is designed for statsmodels GLM objects. It detects marginal families via `model.family` (statsmodels convention) and extracts dispersion from `model.scale`. Non-statsmodels objects with `.predict()` and `.fittedvalues` may work, but kernel parameters will be inferred from statsmodels-specific attributes and could silently produce wrong results. For non-statsmodels GLMs, pass parameter dictionaries directly.
+**Sarmanov copula (primary)** — the recommended approach for books with enough data (≥20,000 policyholder-years, ≥2,000 claims). Handles the discrete-continuous mixed margins problem correctly. Per-policy analytical correction factors, no simulation.
+
+**Gaussian copula (comparison)** — the standard actuarial approach. Uses PIT approximation for the discrete frequency margin. Good for presenting results in familiar terms, or for comparing rho estimates. Returns a portfolio-average correction factor, not per-policy factors.
+
+**Garrido conditional fallback** (`ConditionalFreqSev`) — adds claim count N as a covariate in the severity GLM. One extra GLM parameter. More stable on small books where omega estimation from the Sarmanov would be unreliable.
+
+---
+
+## Complete example
 
 ```python
-# Works with statsmodels GLM results
-import statsmodels.api as sm
 import numpy as np
 import pandas as pd
+import statsmodels.api as sm
+from insurance_frequency_severity import (
+    JointFreqSev,
+    ConditionalFreqSev,
+    DependenceTest,
+    compare_copulas,
+    JointModelReport,
+)
 
-rng = np.random.default_rng(0)
-n = 3000
-X = pd.DataFrame({"age": rng.normal(35, 8, n), "ncb": rng.normal(5, 2, n)})
+rng = np.random.default_rng(42)
+n_policies = 5000
+claim_count = rng.poisson(0.10, size=n_policies)
+avg_severity = np.where(
+    claim_count > 0,
+    rng.gamma(shape=3.0, scale=800.0, size=n_policies),
+    np.nan,
+)
+X = pd.DataFrame({
+    "age": rng.normal(35, 8, n_policies),
+    "ncb": rng.normal(5, 2, n_policies),
+})
 X_const = sm.add_constant(X)
-y = rng.poisson(0.10, size=n)
-claims_mask = y > 0
-s = rng.gamma(3.0, 800.0, size=n)
+claims_mask = claim_count > 0
 
-nb_glm = sm.GLM(y, X_const, family=sm.families.NegativeBinomial(alpha=0.8)).fit()
-gamma_glm = sm.GLM(
-    s[claims_mask],
-    X_const[claims_mask],
+my_nb_glm = sm.GLM(
+    claim_count, X_const,
+    family=sm.families.NegativeBinomial(alpha=0.8),
+).fit()
+my_gamma_glm = sm.GLM(
+    avg_severity[claims_mask], X_const[claims_mask],
     family=sm.families.Gamma(link=sm.families.links.Log()),
 ).fit()
 
-model = JointFreqSev(freq_glm=nb_glm, sev_glm=gamma_glm)
+# Step 1: test for dependence
+test = DependenceTest(n_permutations=1000)
+test.fit(claim_count[claims_mask], avg_severity[claims_mask])
+print(test.summary())
+
+# Step 2: compare copula families
+comparison = compare_copulas(claim_count, avg_severity, my_nb_glm, my_gamma_glm)
+print(comparison)  # sorted by AIC: sarmanov, gaussian, fgm
+
+# Step 3: fit and correct
+model = JointFreqSev(freq_glm=my_nb_glm, sev_glm=my_gamma_glm, copula="sarmanov")
+model.fit(
+    pd.DataFrame({"claim_count": claim_count, "avg_severity": avg_severity}),
+    n_col="claim_count",
+    s_col="avg_severity",
+)
+print(model.dependence_summary())  # omega, CI, Spearman rho, AIC/BIC
+corrections = model.premium_correction()
+
+# Step 4: generate model report
+report = JointModelReport(model, dependence_test=test, copula_comparison=comparison)
+report.to_html("pricing_review.html", n=claim_count, s=avg_severity, correction_df=corrections)
 ```
 
-## Methods
+---
 
-### JointFreqSev
-
-```python
-model = JointFreqSev(freq_glm, sev_glm, copula="sarmanov")
-model.fit(data, n_col, s_col, method="ifm")   # IFM or MLE
-model.premium_correction()                    # DataFrame with correction factors
-model.loss_cost(X_new)                        # Corrected pure premium for new data
-model.dependence_summary()                    # omega, CI, Spearman rho, AIC/BIC
-
-# Note: for copula="gaussian" or "fgm", premium_correction() returns a single
-# portfolio-average correction factor applied to all policies. Per-policy
-# analytical corrections are available with copula="sarmanov" only.
-```
-
-### ConditionalFreqSev (Garrido 2016)
+## Garrido conditional fallback
 
 ```python
 from insurance_frequency_severity import ConditionalFreqSev
 
-model = ConditionalFreqSev(freq_glm, sev_glm_base)
-model.fit(data, n_col, s_col)
-model.premium_correction()   # Correction = exp(gamma) * exp(mu_n * (exp(gamma) - 1))
+model = ConditionalFreqSev(my_nb_glm, my_gamma_glm)
+model.fit(claims_df, n_col="claim_count", s_col="avg_severity")
+model.premium_correction()
 ```
 
-### Diagnostics
+Use this when you have fewer than 1,000 claims and cannot reliably estimate omega.
 
-```python
-import numpy as np
-import pandas as pd
-import statsmodels.api as sm
-from insurance_frequency_severity import DependenceTest, compare_copulas, JointFreqSev
+---
 
-rng = np.random.default_rng(0)
-n_policies = 5000
-n = rng.poisson(0.10, size=n_policies)
-s = np.where(n > 0, rng.gamma(3.0, 800.0, size=n_policies), np.nan)
-X = pd.DataFrame({"age": rng.normal(35, 8, n_policies)})
-X_const = sm.add_constant(X)
-freq_glm = sm.GLM(n, X_const, family=sm.families.Poisson()).fit()
-claims_mask = n > 0
-sev_glm = sm.GLM(
-    s[claims_mask], X_const[claims_mask],
-    family=sm.families.Gamma(link=sm.families.links.Log()),
-).fit()
-n_positive = n[claims_mask]
-s_positive = s[claims_mask]
+## Reading the correction factors
 
-# Test independence
-test = DependenceTest(n_permutations=1000)
-test.fit(n_positive, s_positive)
-print(test.summary())   # Kendall tau, Spearman rho, permutation p-values
-
-# AIC/BIC comparison across copula families
-comparison = compare_copulas(n, s, freq_glm, sev_glm)
-print(comparison)   # Sorted by AIC: sarmanov, gaussian, fgm
-```
-
-### Report
-
-```python
-from insurance_frequency_severity import JointModelReport
-
-report = JointModelReport(model, dependence_test=test, copula_comparison=comparison)
-report.to_html(
-    "pricing_review.html",
-    n=n,
-    s=s,
-    correction_df=corrections,
-)
-```
-
-## Premium correction interpretation
-
-The correction factor is `E[N×S] / (E[N] × E[S])`. Values:
+`premium_correction()` returns the factor `E[N×S] / (E[N] × E[S])` per policy:
 
 - `< 1.0`: negative dependence. High-count policyholders have lower severity than independence predicts. Independence model overstates their risk.
 - `= 1.0`: independence holds.
-- `> 1.0`: positive dependence. Rare but valid — e.g., some commercial lines where large customers have both high frequency and high severity.
+- `> 1.0`: positive dependence — valid in some commercial lines where large customers have both high frequency and high severity.
 
-For UK motor with typical NCD structure, expect the average correction to be 0.93–0.98 (independence overstates the pure premium by 2–7% on average, with larger corrections at the high-frequency tail).
+For UK motor with typical NCD structure, expect the average correction to be 0.93–0.98, with larger corrections at the high-frequency tail.
+
+---
+
+## Validated performance
+
+On a 30,000-policy synthetic UK motor book with planted Sarmanov dependence (omega=3.5):
+
+| Metric | Independence | Sarmanov copula |
+|---|---|---|
+| Portfolio premium bias | −3% to −8% | ~0% |
+| High-risk decile correction factor | 1.00 | 1.05–1.15× |
+| Omega recovery relative error | — | 10–20% |
+| Fit time | < 1s | < 1s |
+
+In a benchmark on 12,000 synthetic policies with latent freq-sev dependence, the Sarmanov correction reduced pure premium MAE vs oracle by 28.6% and portfolio bias from +22.95% to −6.77%.
+
+Always run `DependenceTest` before fitting. If independence cannot be rejected (p > 0.05) and your book has fewer than 1,000 claims, use `ConditionalFreqSev` instead.
+
+Full validation notebook: `notebooks/databricks_validation.py`.
+
+---
+
+## Data requirements
+
+Stable omega estimation requires approximately 20,000 policyholder-years with at least 2,000 claims. The library warns at < 1,000 policies and < 500 claims. Zero-claim policies contribute no information about the dependence parameter — only observed (n > 0, s) pairs enter the likelihood.
+
+---
 
 ## Theoretical background
 
 The Sarmanov bivariate distribution:
 
 ```
-f(n, s) = f_N(n) × f_S(s) × [1 + ω × φ₁(n) × φ₂(s)]
+f(n, s) = f_N(n) * f_S(s) * [1 + omega * phi_1(n) * phi_2(s)]
 ```
 
-where φ₁, φ₂ are bounded kernel functions with zero mean under their respective marginals. When ω=0 this reduces to the product of marginals (independence). The key advantage over standard copulas: no probability integral transform is needed for the discrete frequency margin. Sklar's theorem is not unique for discrete distributions, so the "copula" of a discrete-continuous pair is not well-defined. The Sarmanov family sidesteps this entirely by working directly with the joint distribution.
+where phi_1 and phi_2 are bounded kernel functions with zero mean under their marginals. When omega=0 this reduces to the independence model. The key advantage: no probability integral transform is needed for the discrete frequency margin, which is required by Gaussian/Clayton copulas and is not well-defined for discrete distributions.
 
-Spearman's rho range for the Laplace kernel Sarmanov with NB/Gamma margins: [-3/4, 3/4] (Blier-Wong 2026). This comfortably accommodates the moderate negative dependence found in auto insurance data.
+IFM estimation: fit frequency GLM → fit severity GLM → profile likelihood over omega using only observed (n > 0, s) pairs. Closed-form, no simulation.
 
-The IFM (Inference Functions for Margins) estimator:
-1. Fit frequency GLM → get E[N|xᵢ] for each policy
-2. Fit severity GLM → get E[S|xᵢ] for each claiming policy
-3. Profile likelihood over ω: maximise Σᵢ log[1 + ω × φ₁(nᵢ; μ̂ᴺᵢ) × φ₂(sᵢ; μ̂ˢᵢ)] for observed (nᵢ, sᵢ) with nᵢ > 0
-
-Zero-claim policies contribute no severity information; their likelihood contribution is just f_N(0), which does not depend on ω. So only observed claims inform the dependence estimate.
-
-## Data requirements
-
-Stable ω estimation needs approximately 20,000 policyholder-years with at least 2,000 claims. Smaller portfolios will produce wide confidence intervals on ω. The library warns you at < 1,000 policies and < 500 claims.
-
-For small books, use `ConditionalFreqSev` — it estimates a single parameter γ from the severity GLM refitted with N as a covariate, which is more stable with less data.
+Reference: Vernic, Bolancé, Alemany (2022), *Insurance: Mathematics and Economics*, 102, 111–125.
 
 ---
-
-## Performance
-
-Benchmarked against an **independent two-part model** (Poisson GLM × Gamma GLM, pure premium = E[N] × E[S]) on 12,000 synthetic UK motor policies (8,437 train / 3,563 test) with known positive freq-sev dependence via a latent risk score. Results from `benchmarks/benchmark_insurance_frequency_severity.py` run 2026-03-16.
-
-| Metric | Independent model | Sarmanov copula | Change |
-|--------|------------------|-----------------|--------|
-| Pure premium MAE vs oracle | 14.8405 | **10.6010** | -28.6% |
-| Portfolio total premium bias | +22.95% | -6.77% | -16.2pp |
-| Estimated Spearman rho | 0.000 | -0.015 | — |
-| Fit time (seconds) | 0.105 | 0.128 | +21% |
-
-**Correction factors:** mean 0.943, p10 0.939, p90 0.950. High-risk decile correction: 0.952 (-4.8% premium reduction vs independence). Low-risk decile: 0.940.
-
-**Note on omega sign:** The benchmark DGP uses a positive latent risk score (z) to drive both higher frequency and severity. The fitted omega is -1.14 (Spearman rho ≈ -0.015), meaning the library detected negative-leaning dependence on this sample. The 95% CI on omega is (-1.61, +0.30), which includes zero — independence is not rejected at 5%. Despite this, the correction produces a 28.6% MAE improvement and reduces portfolio bias from +22.95% to -6.77%. This is explained by the correction absorbing some of the marginal model error: the GLMs slightly overpredict frequency for high-latent-risk policies, and the copula correction partially offsets this.
-
-The canonical use case is a portfolio where omega is positive and statistically significant. Use `DependenceTest` before fitting to check whether the correction is supported by the data.
-
-**When to use:** Personal lines motor or property books where `DependenceTest` indicates positive and statistically significant freq-sev dependence. The correction is analytical (closed-form, no simulation at scoring time).
-
-**When NOT to use:** When you cannot reject independence (`DependenceTest` p-value > 0.05). Also when the book has very few claims (< 500) — the omega estimate will be too noisy.
-
-
-
-## Databricks Notebook
-
-A validation notebook with known-DGP omega recovery and premium comparison is at `notebooks/databricks_validation.py`. A broader benchmark notebook is at `notebooks/benchmark.py`. Both run on Databricks serverless compute with no external data required.
 
 ## Limitations
 
-- Stable omega estimation requires approximately 20,000 policyholder-years with at least 2,000 observed claims. Smaller books produce wide confidence intervals on the dependence parameter. Always run `DependenceTest` before fitting — if independence cannot be rejected (p > 0.05), do not apply corrections.
-- The Sarmanov IFM estimator uses only policies with at least one observed claim. Zero-claim policies contribute no information about the frequency-severity dependence parameter. If your zero-claim rate is above 90%, the effective estimation sample is very small relative to total book size.
-- Per-policy analytical corrections are available only with `copula="sarmanov"`. The Gaussian and FGM copulas return a single portfolio-average correction factor. If heterogeneous corrections by risk segment matter, Sarmanov is the only option.
-- The library wraps statsmodels GLM objects. Non-statsmodels models may work via `.predict()` but kernel parameters are inferred from statsmodels-specific attributes. For non-statsmodels GLMs, pass parameter dictionaries directly and validate the kernel construction manually.
-- The premium correction `E[N×S] / (E[N] × E[S])` is computed at scoring time and not recalibrated as the portfolio evolves. If the NCD suppression effect changes (e.g., the NCD scale is restructured), re-estimate omega on recent data. Stale corrections can move in the wrong direction.
-
-
-## References
-
-- Vernic, Bolancé, Alemany (2022). Sarmanov distribution for modeling dependence between the frequency and the average severity of insurance claims. *Insurance: Mathematics and Economics*, 102, 111–125.
-- Garrido, Genest, Schulz (2016). Generalized linear models for dependent frequency and severity of insurance claims. *IME*, 70, 205–215.
-- Lee, Shi (2019). A dependent frequency-severity approach to modeling longitudinal insurance claims. *IME*, 87, 115–129.
-- Blier-Wong (2026). arXiv:2601.09016. Spearman rho range for Sarmanov copulas.
-- Czado, Kastenmeier, Brechmann, Min (2012). A mixed copula model for insurance claims and claim sizes. *Scandinavian Actuarial Journal*, 4, 278–305.
+- Stable omega estimation requires ≥20,000 policyholder-years and ≥2,000 claims. Smaller books produce wide confidence intervals. Always check `DependenceTest` first.
+- Per-policy analytical corrections are only available with `copula="sarmanov"`. Gaussian and FGM copulas return a portfolio-average factor only.
+- The library wraps statsmodels GLM objects. Non-statsmodels models may work via `.predict()` but kernel parameters are inferred from statsmodels-specific attributes.
+- The correction is not recalibrated as the portfolio evolves. If the NCD scale is restructured, re-estimate omega on recent data.
 
 ---
 
-Built by [Burning Cost](https://github.com/burning-cost). MIT licence.
+## Part of the Burning Cost stack
 
-## Related Libraries
+Takes claims data and your existing fitted GLMs. Feeds Sarmanov-corrected joint premium estimates into [insurance-optimise](https://github.com/burning-cost/insurance-optimise) and [insurance-conformal](https://github.com/burning-cost/insurance-conformal). [See the full stack](https://burning-cost.github.io/stack/)
 
-| Library | What it does |
-|---------|-------------|
-| [insurance-dispersion](https://github.com/burning-cost/insurance-dispersion) | Double GLM for covariate-driven dispersion — models heterogeneous variance within each component |
-| [insurance-severity](https://github.com/burning-cost/insurance-severity) | Heavy-tail severity with composite Pareto models and ILFs — use for the severity component when tails matter |
-| [insurance-quantile](https://github.com/burning-cost/insurance-quantile) | Quantile GBM for tail risk — non-parametric complement when the full distributional structure is uncertain |
+| Library | Description |
+|---|---|
+| [insurance-conformal](https://github.com/burning-cost/insurance-conformal) | Distribution-free prediction intervals — joint frequency-severity coverage guarantees |
+| [insurance-credibility](https://github.com/burning-cost/insurance-credibility) | Bühlmann-Straub credibility — blends frequency and severity estimates for thin segments |
+| [insurance-monitoring](https://github.com/burning-cost/insurance-monitoring) | Model drift detection — monitors frequency and severity calibration separately |
+| [insurance-governance](https://github.com/burning-cost/insurance-governance) | Model validation and MRM governance — sign-off pack for joint frequency-severity models |
 
+---
 
+## References
+
+- Vernic, Bolancé, Alemany (2022). "Sarmanov distribution for modeling dependence between the frequency and the average severity of insurance claims." *Insurance: Mathematics and Economics*, 102, 111–125.
+- Garrido, Genest, Schulz (2016). "Generalized linear models for dependent frequency and severity of insurance claims." *IME*, 70, 205–215.
+- Lee, Shi (2019). "A dependent frequency-severity approach to modeling longitudinal insurance claims." *IME*, 87, 115–129.
+- Czado, Kastenmeier, Brechmann, Min (2012). "A mixed copula model for insurance claims and claim sizes." *Scandinavian Actuarial Journal*, 4, 278–305.
+
+---
 
 ## Community
 
 - **Questions?** Start a [Discussion](https://github.com/burning-cost/insurance-frequency-severity/discussions)
 - **Found a bug?** Open an [Issue](https://github.com/burning-cost/insurance-frequency-severity/issues)
-- **Blog & tutorials:** [burning-cost.github.io](https://burning-cost.github.io)
+- **Blog and tutorials:** [burning-cost.github.io](https://burning-cost.github.io)
+- **Training course:** [Insurance Pricing in Python](https://burning-cost.github.io/course) — Module 4 covers frequency-severity modelling. £97 one-time.
 
----
+## Licence
 
-## Part of the Burning Cost Toolkit
-
-Open-source Python libraries for UK personal lines insurance pricing. [Browse all libraries](https://burning-cost.github.io/tools/)
-
-| Library | Description |
-|---------|-------------|
-| [insurance-conformal](https://github.com/burning-cost/insurance-conformal) | Distribution-free prediction intervals — `FrequencySeverityConformal` provides joint f/s coverage guarantees |
-| [insurance-credibility](https://github.com/burning-cost/insurance-credibility) | Bühlmann-Straub credibility — blends frequency and severity estimates for thin segments |
-| [insurance-causal](https://github.com/burning-cost/insurance-causal) | DML causal inference — establishes whether frequency-severity dependence is causal or driven by observed confounders |
-| [insurance-monitoring](https://github.com/burning-cost/insurance-monitoring) | Model drift detection — monitors frequency and severity component calibration separately over time |
-| [insurance-governance](https://github.com/burning-cost/insurance-governance) | Model validation and MRM governance — produces the sign-off pack for joint frequency-severity models |
-
-
-## Training Course
-
-Want structured learning? [Insurance Pricing in Python](https://burning-cost.github.io/course) is a 12-module course covering the full pricing workflow. Module 4 covers frequency-severity modelling — Poisson/Gamma split, Sarmanov copulas, and joint prediction intervals. £97 one-time.
+MIT
