@@ -56,8 +56,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/burning-cost/insurance-frequency-severity"
+Homepage = "https://burning-cost.github.io/insurance-frequency-severity"
 Repository = "https://github.com/burning-cost/insurance-frequency-severity"
+Changelog = "https://github.com/burning-cost/insurance-frequency-severity/releases"
+Documentation = "https://burning-cost.github.io/insurance-frequency-severity"
+Issues = "https://github.com/burning-cost/insurance-frequency-severity/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/insurance_frequency_severity"]
