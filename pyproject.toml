@@ -25,6 +25,7 @@ keywords = [
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -32,8 +33,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Mathematics",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
-
-    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Office/Business :: Financial",
 ]
 requires-python = ">=3.10"
@@ -56,11 +56,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://burning-cost.github.io/insurance-frequency-severity"
+Homepage = "https://burning-cost.github.io/"
 Repository = "https://github.com/burning-cost/insurance-frequency-severity"
 Changelog = "https://github.com/burning-cost/insurance-frequency-severity/releases"
 Documentation = "https://burning-cost.github.io/insurance-frequency-severity"
-Issues = "https://github.com/burning-cost/insurance-frequency-severity/issues"
+"Bug Tracker" = "https://github.com/burning-cost/insurance-frequency-severity/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/insurance_frequency_severity"]
