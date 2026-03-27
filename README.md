@@ -54,8 +54,6 @@ This library gives you three methods to measure and correct for it:
 uv add insurance-frequency-severity
 ```
 
-> Questions or feedback? Start a [Discussion](https://github.com/burning-cost/insurance-frequency-severity/discussions). Found it useful? A star helps others find it.
-
 ## Expected Performance
 
 Validated on a 30,000-policy synthetic UK motor book with planted positive Sarmanov dependence (omega=3.5). Results from `notebooks/databricks_validation.py` — pure Sarmanov DGP with known omega, so the IFM estimator targets the planted parameter directly.
@@ -143,8 +141,6 @@ print(corrections[["mu_n", "mu_s", "correction_factor", "premium_joint"]].descri
 ```
 
 ---
-
-If this is useful, a ⭐ on GitHub helps others find it.
 
 ## GLM compatibility
 
@@ -348,7 +344,6 @@ Built by [Burning Cost](https://github.com/burning-cost). MIT licence.
 - **Found a bug?** Open an [Issue](https://github.com/burning-cost/insurance-frequency-severity/issues)
 - **Blog & tutorials:** [burning-cost.github.io](https://burning-cost.github.io)
 
-If this library saves you time, a star on GitHub helps others find it.
 ---
 
 ## Part of the Burning Cost Toolkit
