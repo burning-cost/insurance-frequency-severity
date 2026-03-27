@@ -1,6 +1,8 @@
 # insurance-frequency-severity
 
-[![PyPI](https://img.shields.io/pypi/v/insurance-frequency-severity)](https://pypi.org/project/insurance-frequency-severity/) [![Python](https://img.shields.io/pypi/pyversions/insurance-frequency-severity)](https://pypi.org/project/insurance-frequency-severity/) [![Tests](https://github.com/burning-cost/insurance-frequency-severity/actions/workflows/tests.yml/badge.svg)](https://github.com/burning-cost/insurance-frequency-severity/actions/workflows/tests.yml) [![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/burning-cost/insurance-frequency-severity/blob/main/LICENSE) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/burning-cost/insurance-frequency-severity/blob/main/notebooks/quickstart.ipynb) [![nbviewer](https://img.shields.io/badge/render-nbviewer-orange)](https://nbviewer.org/github/burning-cost/insurance-frequency-severity/blob/main/notebooks/quickstart.ipynb)
+**Sarmanov copula joint frequency-severity modelling — analytical premium correction without refitting your GLMs.**
+
+[![PyPI](https://img.shields.io/pypi/v/insurance-frequency-severity)](https://pypi.org/project/insurance-frequency-severity/) [![Python](https://img.shields.io/pypi/pyversions/insurance-frequency-severity)](https://pypi.org/project/insurance-frequency-severity/) [![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/burning-cost/insurance-frequency-severity/blob/main/LICENSE)
 
 ---
 
@@ -10,7 +12,7 @@ Every UK motor pricing team multiplies a Poisson frequency GLM by a Gamma severi
 
 In UK motor, the NCD structure suppresses borderline claims: policyholders aware of the NCD threshold do not report near-miss incidents. The result is a systematic negative correlation between claim count and average severity. Ignoring this biases the pure premium, and the bias concentrates in your highest-risk accounts. Vernic, Bolancé and Alemany (2022) measured this at €5–55+ per policyholder on a Spanish auto book. The directional effect in UK motor is the same.
 
-**Blog post:** [Your Frequency-Severity Independence Assumption Is Costing You Premium](https://burning-cost.github.io/2027/05/15/frequency-severity-independence-is-costing-you-premium/)
+**Blog post:** [Your Frequency-Severity Independence Assumption Is Costing You Premium](https://burning-cost.github.io/2026/05/15/frequency-severity-independence-is-costing-you-premium/)
 
 ---
 
@@ -43,26 +45,16 @@ uv add insurance-frequency-severity
 
 ```python
 import pandas as pd
-import statsmodels.api as sm
 from insurance_frequency_severity import JointFreqSev, DependenceTest
-
-# Assumes you have: claim_count (array), avg_severity (array, NaN for zero-claim rows),
-# my_nb_glm and my_gamma_glm (fitted statsmodels GLMs), claims_mask = claim_count > 0
 
 # Test for dependence before committing to a correction
 test = DependenceTest()
 test.fit(n=claim_count[claims_mask], s=avg_severity[claims_mask])
 print(test.summary())  # Kendall tau, Spearman rho, permutation p-values
 
-# Build policy-level DataFrame — one row per policy, all policies including zero-claim
+# Fit joint model on top of your existing fitted GLMs
 policy_df = pd.DataFrame({"claim_count": claim_count, "avg_severity": avg_severity})
-
-# Fit joint model — accepts your existing fitted GLMs
-model = JointFreqSev(
-    freq_glm=my_nb_glm,    # fitted statsmodels NegativeBinomial GLM
-    sev_glm=my_gamma_glm,  # fitted statsmodels Gamma GLM
-    copula="sarmanov",
-)
+model = JointFreqSev(freq_glm=my_nb_glm, sev_glm=my_gamma_glm, copula="sarmanov")
 model.fit(policy_df, n_col="claim_count", s_col="avg_severity")
 
 corrections = model.premium_correction()
@@ -147,7 +139,6 @@ report.to_html("pricing_review.html", n=claim_count, s=avg_severity, correction_
 ```python
 from insurance_frequency_severity import ConditionalFreqSev
 
-# policy_df: one row per policy, columns claim_count and avg_severity
 policy_df = pd.DataFrame({"claim_count": claim_count, "avg_severity": avg_severity})
 
 model = ConditionalFreqSev(my_nb_glm, my_gamma_glm)
