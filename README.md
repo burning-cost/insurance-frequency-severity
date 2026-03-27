@@ -42,13 +42,20 @@ uv add insurance-frequency-severity
 ```
 
 ```python
+import pandas as pd
 import statsmodels.api as sm
 from insurance_frequency_severity import JointFreqSev, DependenceTest
+
+# Assumes you have: claim_count (array), avg_severity (array, NaN for zero-claim rows),
+# my_nb_glm and my_gamma_glm (fitted statsmodels GLMs), claims_mask = claim_count > 0
 
 # Test for dependence before committing to a correction
 test = DependenceTest()
 test.fit(n=claim_count[claims_mask], s=avg_severity[claims_mask])
 print(test.summary())  # Kendall tau, Spearman rho, permutation p-values
+
+# Build policy-level DataFrame — one row per policy, all policies including zero-claim
+policy_df = pd.DataFrame({"claim_count": claim_count, "avg_severity": avg_severity})
 
 # Fit joint model — accepts your existing fitted GLMs
 model = JointFreqSev(
@@ -56,7 +63,7 @@ model = JointFreqSev(
     sev_glm=my_gamma_glm,  # fitted statsmodels Gamma GLM
     copula="sarmanov",
 )
-model.fit(claims_df, n_col="claim_count", s_col="avg_severity")
+model.fit(policy_df, n_col="claim_count", s_col="avg_severity")
 
 corrections = model.premium_correction()
 print(corrections[["mu_n", "mu_s", "correction_factor", "premium_joint"]].describe())
@@ -122,12 +129,9 @@ comparison = compare_copulas(claim_count, avg_severity, my_nb_glm, my_gamma_glm)
 print(comparison)  # sorted by AIC: sarmanov, gaussian, fgm
 
 # Step 3: fit and correct
+policy_df = pd.DataFrame({"claim_count": claim_count, "avg_severity": avg_severity})
 model = JointFreqSev(freq_glm=my_nb_glm, sev_glm=my_gamma_glm, copula="sarmanov")
-model.fit(
-    pd.DataFrame({"claim_count": claim_count, "avg_severity": avg_severity}),
-    n_col="claim_count",
-    s_col="avg_severity",
-)
+model.fit(policy_df, n_col="claim_count", s_col="avg_severity")
 print(model.dependence_summary())  # omega, CI, Spearman rho, AIC/BIC
 corrections = model.premium_correction()
 
@@ -143,8 +147,11 @@ report.to_html("pricing_review.html", n=claim_count, s=avg_severity, correction_
 ```python
 from insurance_frequency_severity import ConditionalFreqSev
 
+# policy_df: one row per policy, columns claim_count and avg_severity
+policy_df = pd.DataFrame({"claim_count": claim_count, "avg_severity": avg_severity})
+
 model = ConditionalFreqSev(my_nb_glm, my_gamma_glm)
-model.fit(claims_df, n_col="claim_count", s_col="avg_severity")
+model.fit(policy_df, n_col="claim_count", s_col="avg_severity")
 model.premium_correction()
 ```
 
