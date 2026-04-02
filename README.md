@@ -227,10 +227,18 @@ Takes claims data and your existing fitted GLMs. Feeds Sarmanov-corrected joint 
 
 ## References
 
-- Vernic, Bolancé, Alemany (2022). "Sarmanov distribution for modeling dependence between the frequency and the average severity of insurance claims." *Insurance: Mathematics and Economics*, 102, 111–125.
-- Garrido, Genest, Schulz (2016). "Generalized linear models for dependent frequency and severity of insurance claims." *IME*, 70, 205–215.
-- Lee, Shi (2019). "A dependent frequency-severity approach to modeling longitudinal insurance claims." *IME*, 87, 115–129.
-- Czado, Kastenmeier, Brechmann, Min (2012). "A mixed copula model for insurance claims and claim sizes." *Scandinavian Actuarial Journal*, 4, 278–305.
+**Sarmanov copula foundations**
+
+- Sarmanov, O.V. (1966). "Generalized normal correlation and two-dimensional Fréchet classes." *Soviet Mathematics Doklady*, 7, 596–599. (Original Sarmanov bivariate distribution construction.)
+- Lee, M.T. & Cha, J.H. (2015). "On two general classes of discrete bivariate distributions." *The American Statistician*, 69(3), 221–230. [doi:10.1080/00031305.2015.1044710](https://doi.org/10.1080/00031305.2015.1044710) (Sarmanov family properties relevant to count-continuous joint models.)
+
+**Insurance frequency-severity joint modelling**
+
+- Vernic, R., Bolancé, C. & Alemany, R. (2022). "Sarmanov distribution for modeling dependence between the frequency and the average severity of insurance claims." *Insurance: Mathematics and Economics*, 102, 111–125. [doi:10.1016/j.insmatheco.2021.11.003](https://doi.org/10.1016/j.insmatheco.2021.11.003)
+- Garrido, J., Genest, C. & Schulz, J. (2016). "Generalized linear models for dependent frequency and severity of insurance claims." *Insurance: Mathematics and Economics*, 70, 205–215. [doi:10.1016/j.insmatheco.2016.06.006](https://doi.org/10.1016/j.insmatheco.2016.06.006)
+- Lee, G. & Shi, P. (2019). "A dependent frequency-severity approach to modeling longitudinal insurance claims." *Insurance: Mathematics and Economics*, 87, 115–129. [doi:10.1016/j.insmatheco.2019.04.004](https://doi.org/10.1016/j.insmatheco.2019.04.004)
+- Czado, C., Kastenmeier, R., Brechmann, E.C. & Min, A. (2012). "A mixed copula model for insurance claims and claim sizes." *Scandinavian Actuarial Journal*, 4, 278–305. [doi:10.1080/03461238.2010.546009](https://doi.org/10.1080/03461238.2010.546009)
+- Frees, E.W. & Valdez, E.A. (1998). "Understanding Relationships Using Copulas." *North American Actuarial Journal*, 2(1), 1–25. [doi:10.1080/10920277.1998.10595667](https://doi.org/10.1080/10920277.1998.10595667) (Foundational copula reference for actuarial dependence modelling.)
 
 ---
 
