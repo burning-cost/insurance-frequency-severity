@@ -873,7 +873,7 @@ class JointFreqSev:
 
     def loss_cost(
         self,
-        X: pd.DataFrame,
+        X: Optional[pd.DataFrame] = None,
         exposure: Optional[np.ndarray] = None,
         n_mc: int = 50_000,
         rng: Optional[np.random.Generator] = None,
@@ -886,8 +886,8 @@ class JointFreqSev:
 
         Parameters
         ----------
-        X : DataFrame
-            Feature matrix for new policies.
+        X : DataFrame, optional
+            Feature matrix for new policies. If None, uses training fitted values.
         exposure : array-like, optional
             Exposure vector for frequency scaling.
         n_mc : int

@@ -220,19 +220,38 @@ class LaplaceKernelLognormal(Kernel):
         """
         Numerical E[exp(-alpha*S)] for S ~ Lognormal(log_mu, log_sigma).
         Uses Gauss-Laguerre quadrature via scipy.
+
+        log_mu and log_sigma must be scalars — use centred() for array inputs.
         """
         from scipy.integrate import quad
-        dist = stats.lognorm(s=log_sigma, scale=np.exp(log_mu))
-        # Integrate over [0, inf)
+        # Ensure scalar inputs: quad requires the integrand to return a scalar
+        _lmu = float(np.asarray(log_mu).flat[0])
+        _lsig = float(np.asarray(log_sigma).flat[0])
+        alpha = self.alpha
+        # Inline pdf to guarantee scalar return from the integrand
         result, _ = quad(
-            lambda s: np.exp(-self.alpha * s) * dist.pdf(s),
+            lambda s_val: (
+                float(np.exp(-alpha * s_val))
+                * float(stats.lognorm.pdf(s_val, s=_lsig, scale=np.exp(_lmu)))
+            ),
             0, np.inf,
             limit=200,
         )
         return float(result)
 
-    def centred(self, s: np.ndarray, log_mu: float, log_sigma: float) -> np.ndarray:
-        return self(s) - self.mgf(log_mu, log_sigma)
+    def centred(self, s: np.ndarray, log_mu, log_sigma) -> np.ndarray:
+        """phi(s) = exp(-alpha*s) - E[exp(-alpha*S)], element-wise when parameters are arrays."""
+        s_arr = self(s)  # exp(-alpha * s), shape (n,)
+        lmu = np.asarray(log_mu, dtype=float)
+        lsig = np.asarray(log_sigma, dtype=float)
+        if lmu.ndim == 0 and lsig.ndim == 0:
+            # Scalar path: single mgf call
+            return s_arr - self.mgf(float(lmu), float(lsig))
+        # Array path: per-observation parameters — compute mgf element-wise
+        lmu_flat = np.broadcast_to(lmu, s_arr.shape).ravel()
+        lsig_flat = np.broadcast_to(lsig, s_arr.shape).ravel()
+        mgf_vals = np.array([self.mgf(float(m), float(sg)) for m, sg in zip(lmu_flat, lsig_flat)])
+        return s_arr - mgf_vals.reshape(s_arr.shape)
 
     def sup_abs(self, log_mu: float, log_sigma: float) -> float:
         m = self.mgf(log_mu, log_sigma)
