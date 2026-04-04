@@ -4,26 +4,42 @@ build-backend = "hatchling.build"
 
 [project]
 name = "insurance-frequency-severity"
-version = "0.2.8"
-description = "Sarmanov copula joint frequency-severity modelling for UK personal lines insurance, with neural two-part dependent model"
+version = "0.2.9"
+description = "Joint frequency-severity modelling for insurance pricing: Sarmanov copula, compound distributions, and neural two-part models for UK personal lines claims."
 readme = "README.md"
 license = "MIT"
+requires-python = ">=3.10"
 authors = [
     {name = "Burning Cost", email = "pricing.frontier@gmail.com"}
 ]
 keywords = [
     "insurance",
     "actuarial",
+    "frequency severity",
     "frequency-severity",
+    "claim frequency",
+    "claim severity",
+    "claims modelling",
+    "loss modelling",
     "copula",
     "sarmanov",
+    "compound distribution",
+    "tweedie",
+    "poisson",
+    "gamma",
     "glm",
     "pricing",
-    "neural-network",
-    "multi-task-learning",
+    "UK",
+    "personal lines",
+    "neural network",
+    "multi-task learning",
+    "joint model",
+    "dependence",
+    "loss ratio",
+    "pure premium",
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Financial and Insurance Industry",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
@@ -36,7 +52,6 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Office/Business :: Financial",
 ]
-requires-python = ">=3.10"
 dependencies = [
     "numpy>=2.0",
     "pandas>=2.0",
@@ -56,11 +71,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://burning-cost.github.io/"
+Homepage = "https://burning-cost.github.io/libraries/insurance-frequency-severity/"
+Documentation = "https://burning-cost.github.io/libraries/insurance-frequency-severity/"
 Repository = "https://github.com/burning-cost/insurance-frequency-severity"
-Changelog = "https://github.com/burning-cost/insurance-frequency-severity/releases"
-Documentation = "https://burning-cost.github.io/insurance-frequency-severity"
 "Bug Tracker" = "https://github.com/burning-cost/insurance-frequency-severity/issues"
+Changelog = "https://github.com/burning-cost/insurance-frequency-severity/releases"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/insurance_frequency_severity"]
