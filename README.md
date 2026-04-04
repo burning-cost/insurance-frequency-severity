@@ -2,7 +2,7 @@
 
 **Sarmanov copula joint frequency-severity modelling — analytical premium correction without refitting your GLMs.**
 
-[![PyPI](https://img.shields.io/pypi/v/insurance-frequency-severity)](https://pypi.org/project/insurance-frequency-severity/) [![Python](https://img.shields.io/pypi/pyversions/insurance-frequency-severity)](https://pypi.org/project/insurance-frequency-severity/) [![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/burning-cost/insurance-frequency-severity/blob/main/LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/insurance-frequency-severity)](https://pypi.org/project/insurance-frequency-severity/) [![Downloads](https://img.shields.io/pypi/dm/insurance-frequency-severity)](https://pypi.org/project/insurance-frequency-severity/) [![Python](https://img.shields.io/pypi/pyversions/insurance-frequency-severity)](https://pypi.org/project/insurance-frequency-severity/) [![License](https://img.shields.io/pypi/l/insurance-frequency-severity)](https://pypi.org/project/insurance-frequency-severity/)
 
 ---
 
@@ -252,3 +252,11 @@ Takes claims data and your existing fitted GLMs. Feeds Sarmanov-corrected joint 
 ## Licence
 
 MIT
+
+## Related Libraries
+
+| Library | Description |
+|---------|-------------|
+| [`insurance-credibility`](https://github.com/burning-cost/insurance-credibility) | Bühlmann-Straub credibility — apply to frequency-severity components when segments have thin data |
+| [`insurance-severity`](https://github.com/burning-cost/insurance-severity) | Spliced severity distributions — parametric severity modelling to feed into the frequency-severity framework |
+| [`insurance-distributional`](https://github.com/burning-cost/insurance-distributional) | Distributional GBMs — alternative when you want a single model for the full loss distribution |
