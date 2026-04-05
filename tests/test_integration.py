@@ -346,31 +346,29 @@ class TestDependenceTestPipeline:
 class TestCompareCopulasPipeline:
     """
     compare_copulas() fits three copula families and returns a ranked AIC table.
+    compare_copulas takes n and s arrays directly (not a DataFrame).
     On small data it may not converge well, but it must return a valid DataFrame.
     """
 
     def test_compare_copulas_returns_dataframe(self, small_nb_gamma_dataset):
         d = small_nb_gamma_dataset
-        data = pd.DataFrame({
-            "claim_count": d["n"],
-            "avg_severity": d["s"],
-        })
         freq_glm = _make_mock_freq_glm(d["n_policies"], d["mu_n"], d["alpha"])
         sev_glm = _make_mock_sev_glm(d["n_policies"], d["mu_s"], d["shape"])
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             result = compare_copulas(
-                data=data,
+                n=d["n"],
+                s=d["s"],
                 freq_glm=freq_glm,
                 sev_glm=sev_glm,
-                n_col="claim_count",
-                s_col="avg_severity",
                 rng=np.random.default_rng(7),
             )
 
         assert isinstance(result, pd.DataFrame)
-        assert "aic" in result.columns or "AIC" in result.columns or len(result.columns) > 0
-        # Should have at most 3 rows (one per copula family)
+        # Should have at most 3 rows (one per copula family: sarmanov, gaussian, fgm)
         assert len(result) <= 3
         assert len(result) >= 1
+        # All entries must have an AIC column (may be named 'aic' or contain it)
+        aic_col = next((c for c in result.columns if "aic" in c.lower()), None)
+        assert aic_col is not None, f"No AIC column found. Columns: {list(result.columns)}"
