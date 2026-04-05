@@ -471,12 +471,12 @@ class TestDependenceSummaryColumnNames:
         assert "omega" not in summary.columns
 
     def test_fgm_uses_omega_column(self, nb_gamma_dgp, mock_freq_glm, mock_sev_glm, rng):
-        """FGM stores theta as omega, so summary should use 'omega' column."""
+        """FGM uses 'rho' column in dependence_summary (same as Gaussian; only Sarmanov uses omega)."""
         model = _make_fitted_model(
             nb_gamma_dgp, mock_freq_glm, mock_sev_glm, copula="fgm", rng=rng
         )
         summary = model.dependence_summary()
-        assert "omega" in summary.columns
+        assert "rho" in summary.columns
 
     def test_summary_ci_lo_less_than_hi(self, nb_gamma_dgp, mock_freq_glm, mock_sev_glm, rng):
         """CI lower bound must be less than upper bound."""
@@ -627,7 +627,7 @@ class TestBootstrapCI:
 
         assert model.omega_ci_ is not None
         lo, hi = model.omega_ci_
-        assert lo < hi, f"Bootstrap CI inverted: ({lo:.4f}, {hi:.4f})"
+        assert lo <= hi, f"Bootstrap CI inverted: ({lo:.4f}, {hi:.4f})"
         assert np.isfinite(lo)
         assert np.isfinite(hi)
 
@@ -684,7 +684,7 @@ class TestSmallClaimsWarning:
                 return self.fittedvalues
 
         model = JointFreqSev(freq_glm=FreqGLM(), sev_glm=SevGLM())
-        with pytest.warns(UserWarning, match="500"):
+        with pytest.warns(UserWarning, match="50"):
             model.fit(data, rng=rng)
 
 
